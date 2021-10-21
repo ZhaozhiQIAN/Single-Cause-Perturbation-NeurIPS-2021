@@ -11,3 +11,6 @@ bash run_one_real.sh
 bash summarise_real.sh
 
 bash Fig_app.sh > Fig_app.txt
+
+#bash run_one_real.sh
+#bash summarise_real.sh

@@ -2,8 +2,7 @@
 
 Single-cause Perturbation (SCP) is a framework to estimate the multi-cause conditional average treatment effect (CATE) from observational data.
 
-Most existing CATE estimation methods are designed for *single cause* interventions, i.e. only one variable can be intervened on at one time.  
-However, many applications involve simultaneous intervention on multiple variables. This is the *multi-cause* estimation problem addressed by SCP.
+Most existing CATE estimation methods are designed for *single cause* interventions, i.e. only one variable can be intervened on at one time.  However, many applications involve simultaneous intervention on multiple variables. This is the *multi-cause* estimation problem addressed by SCP.
 
 SCP leverages the connection between single and multi-cause interventions and overcomes the confounding bias via data augmentation. 
 Compared with existing works, SCP does not make assumptions about the distributional or functional form of the DGP.

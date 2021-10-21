@@ -10,6 +10,7 @@ done
 
 
 mkdir results${prefix}
+mkdir results
 rm results${prefix}/results_nips.txt
 for linear in linear nonlinear
 do
