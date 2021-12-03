@@ -1,10 +1,12 @@
-import torch.nn as nn
-import sim_config
-from sim_data_gen import DataGenerator
-from mlp import DirectOutcomeRegression, ModelTrainer
-from propensity import TreatmentVAE, DensityRatioNetwork
-from utils import *
 import shutil
+
+import torch.nn as nn
+
+import sim_config
+from mlp import DirectOutcomeRegression, ModelTrainer
+from propensity import DensityRatioNetwork, TreatmentVAE
+from sim_data_gen import DataGenerator
+from utils import *
 
 
 def run(d_config, eval_only=False, eval_delta=False):
@@ -25,14 +27,13 @@ def run(d_config, eval_only=False, eval_delta=False):
 
     batch_size = 100
     max_epoch = 100
-    model_id = 'VSR'
-    model_path = 'model/{}_{}_model/'.format(model_id, d_config.sim_id)
+    model_id = "VSR"
+    model_path = "model/{}_{}_model/".format(model_id, d_config.sim_id)
     if not eval_only:
         try:
             shutil.rmtree(model_path)
         except OSError as e:
             print("Error: %s - %s." % (e.filename, e.strerror))
-
 
     learning_rate = 0.01
     seed = 100
@@ -50,23 +51,47 @@ def run(d_config, eval_only=False, eval_delta=False):
         else:
             train_ratio = sample_size / 1000
 
-        dg = DataGenerator(n_confounder, n_cause, n_outcome, sample_size,
-                           p_confounder_cause, p_cause_cause,
-                           cause_noise, outcome_noise, linear=linear, confounding_level=d_config.confounding_level,
-                           real_data=d_config.real_data, train_frac=0.7/train_ratio, val_frac=0.1/train_ratio,
-                           p_outcome_single=p_outcome_single, p_outcome_double=p_outcome_double, outcome_interaction=outcome_interaction)
+        dg = DataGenerator(
+            n_confounder,
+            n_cause,
+            n_outcome,
+            sample_size,
+            p_confounder_cause,
+            p_cause_cause,
+            cause_noise,
+            outcome_noise,
+            linear=linear,
+            confounding_level=d_config.confounding_level,
+            real_data=d_config.real_data,
+            train_frac=0.7 / train_ratio,
+            val_frac=0.1 / train_ratio,
+            p_outcome_single=p_outcome_single,
+            p_outcome_double=p_outcome_double,
+            outcome_interaction=outcome_interaction,
+        )
     else:
         valid_sample_size = 200
         eval_sample_size = 4100
         train_sample_size = sample_size_train
         sample_size = train_sample_size + valid_sample_size + eval_sample_size
-        dg = DataGenerator(n_confounder, n_cause, n_outcome, sample_size,
-                           p_confounder_cause, p_cause_cause,
-                           cause_noise, outcome_noise, linear=linear, confounding_level=d_config.confounding_level,
-                           real_data=d_config.real_data, train_frac=train_sample_size / sample_size,
-                           val_frac=valid_sample_size / sample_size,
-                           p_outcome_single=p_outcome_single, p_outcome_double=p_outcome_double,
-                           outcome_interaction=outcome_interaction)
+        dg = DataGenerator(
+            n_confounder,
+            n_cause,
+            n_outcome,
+            sample_size,
+            p_confounder_cause,
+            p_cause_cause,
+            cause_noise,
+            outcome_noise,
+            linear=linear,
+            confounding_level=d_config.confounding_level,
+            real_data=d_config.real_data,
+            train_frac=train_sample_size / sample_size,
+            val_frac=valid_sample_size / sample_size,
+            p_outcome_single=p_outcome_single,
+            p_outcome_double=p_outcome_double,
+            outcome_interaction=outcome_interaction,
+        )
     if not eval_only:
 
         train_dataset_p, valid_dataset_p, _, _ = dg.generate_dataset_vae()
@@ -76,7 +101,7 @@ def run(d_config, eval_only=False, eval_delta=False):
 
         optimizer = torch.optim.SGD(treatment_vae.parameters(), lr=learning_rate)
 
-        trainer = ModelTrainer(batch_size, 100, treatment_vae.loss, model_id + '-VAE', model_path)
+        trainer = ModelTrainer(batch_size, 100, treatment_vae.loss, model_id + "-VAE", model_path)
 
         trainer.train(treatment_vae, optimizer, train_dataset_p, valid_dataset_p, print_every=10)
 
@@ -87,20 +112,19 @@ def run(d_config, eval_only=False, eval_delta=False):
 
             train_dataset_d, valid_dataset_d, _, _ = dg.generate_dataset_dr(z, z_rand, shuffle=True)
 
-
         # train density ratio network
 
         dr_network = DensityRatioNetwork(n_confounder, n_latent, n_hidden)
         optimizer = torch.optim.SGD(dr_network.parameters(), lr=learning_rate)
 
-        trainer = ModelTrainer(batch_size, 100, dr_network.loss, model_id + '-DR', model_path)
+        trainer = ModelTrainer(batch_size, 100, dr_network.loss, model_id + "-DR", model_path)
 
         trainer.train(dr_network, optimizer, train_dataset_d, valid_dataset_d, print_every=10)
 
         with torch.no_grad():
             x, y = dg.generate_dataset_dr(z, z_rand, return_dataset=False, shuffle=False)
             log_prob = dr_network(x)[:, 0] - dr_network(x)[:, 1]
-            log_prob = log_prob[:(log_prob.shape[0] // 2)]
+            log_prob = log_prob[: (log_prob.shape[0] // 2)]
             log_prob = log_prob - torch.mean(log_prob)
             weight = torch.exp(log_prob).unsqueeze(-1).cpu().numpy()
     else:
@@ -114,15 +138,15 @@ def run(d_config, eval_only=False, eval_delta=False):
 
     new_x_list = dg.generate_test_real(weight=weight)
 
-
-
     # train outcome regression network with weights
     rmse = nn.MSELoss()
     err_list = list()
     param_list = get_scp_config(hyper_param_itr, n_confounder, p_confounder_cause)
     for param in param_list:
-        model_id_to_save = model_id + '-OR_itr_{}'.format(param.itr)
-        model = DirectOutcomeRegression(n_confounder, n_cause, n_outcome, n_hidden=param.n_outcome_rep + param.n_confounder_rep, weighted=True)
+        model_id_to_save = model_id + "-OR_itr_{}".format(param.itr)
+        model = DirectOutcomeRegression(
+            n_confounder, n_cause, n_outcome, n_hidden=param.n_outcome_rep + param.n_confounder_rep, weighted=True
+        )
         optimizer = torch.optim.SGD(model.parameters(), lr=param.learning_rate)
 
         trainer = ModelTrainer(param.batch_size, max_epoch, model.loss, model_id_to_save, model_path)
@@ -141,14 +165,15 @@ def run(d_config, eval_only=False, eval_delta=False):
     # select model with best hyper-parameter
     best_index = int(np.argmin(np.array(err_list)))
     best_param = param_list[best_index]
-    print('Best param:', best_param)
-    model_id_to_load = model_id + '-OR_itr_{}'.format(best_param.itr)
-    model = DirectOutcomeRegression(n_confounder, n_cause, n_outcome,
-                                    n_hidden=best_param.n_outcome_rep + best_param.n_confounder_rep, weighted=True)
+    print("Best param:", best_param)
+    model_id_to_load = model_id + "-OR_itr_{}".format(best_param.itr)
+    model = DirectOutcomeRegression(
+        n_confounder, n_cause, n_outcome, n_hidden=best_param.n_outcome_rep + best_param.n_confounder_rep, weighted=True
+    )
 
     # load best iteration
     _, model_file = load_model(model, model_path, model_id_to_load)
-    torch.save(model, model_path + 'best.pth')
+    torch.save(model, model_path + "best.pth")
 
     if eval_delta:
         for j in range(n_cause):
@@ -160,7 +185,7 @@ def run(d_config, eval_only=False, eval_delta=False):
                 cate_hat = y_hat1 - y_hat0
                 error = torch.sqrt(rmse(cate_hat, cate_test))
                 rmse_sd = bootstrap_RMSE((cate_hat - cate_test) ** 2)
-                print('vsr', n_flip, round(error.item(), 3), round(rmse_sd, 3))
+                print("vsr", n_flip, round(error.item(), 3), round(rmse_sd, 3))
         return 0
 
     with torch.no_grad():
@@ -191,8 +216,8 @@ def run(d_config, eval_only=False, eval_delta=False):
         dg.evaluate_real(y_list)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # config = sim_config.independent_cause
-    config1 = sim_config.sim_dict['real_3000']
+    config1 = sim_config.sim_dict["real_3000"]
 
     run(config1)

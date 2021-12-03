@@ -1,14 +1,16 @@
+from typing import NamedTuple
+
 import numpy as np
-import torch
 import pandas as pds
+import torch
+from sklearn.decomposition import PCA
+
 from global_config import *
 from utils import bootstrap_RMSE
-from typing import NamedTuple
-from sklearn.decomposition import PCA
 
 
 def logistic(x):
-    return 1. / (1. + np.exp(-1. * x))
+    return 1.0 / (1.0 + np.exp(-1.0 * x))
 
 
 def cause_to_num(cause):
@@ -17,6 +19,7 @@ def cause_to_num(cause):
     cause_ind = np.matmul(cause, weight_vector)
     return cause_ind
 
+
 # def num_to_cause(num, n_treatment):
 #     num = torch.tensor(num)
 #     cause = num.unsqueeze(-1).to(torch.long)
@@ -24,9 +27,11 @@ def cause_to_num(cause):
 #     cause_mat.scatter_(1, cause, 1)
 #
 
+
 def dcg_at_k(r, k):
     r = r[:k]
     return np.sum(r / np.log2(np.arange(2, r.size + 2)))
+
 
 def ndcg_at_k(r, k):
     # ndcg_at_k(score_mat, k)
@@ -36,6 +41,7 @@ def ndcg_at_k(r, k):
     for i in range(r.shape[0]):
         res.append(dcg_at_k(r[i], k) / dcg_max)
     return np.array(res)
+
 
 class DataGeneratorConfig(NamedTuple):
     n_confounder: int
@@ -48,8 +54,8 @@ class DataGeneratorConfig(NamedTuple):
     outcome_noise: float
     linear: bool
     sim_id: str
-    p_outcome_single: float = 1.
-    p_outcome_double: float = 0.
+    p_outcome_single: float = 1.0
+    p_outcome_double: float = 0.0
     train_frac: float = 0.7
     val_frac: float = 0.1
     n_flip: int = 1
@@ -60,12 +66,29 @@ class DataGeneratorConfig(NamedTuple):
 
 
 class DataGenerator:
-    def __init__(self, n_confounder, n_cause, n_outcome, sample_size,
-                 p_confounder_cause, p_cause_cause,
-                 cause_noise, outcome_noise, linear,
-                 p_outcome_single=1, p_outcome_double=1,
-                 confounding_level=1., train_frac=0.7, val_frac=0.1,
-                 real_data=False, outcome_interaction=False, outcome_interaction3=False, no_confounder=False, device=DEVICE, dtype=DTYPE):
+    def __init__(
+        self,
+        n_confounder,
+        n_cause,
+        n_outcome,
+        sample_size,
+        p_confounder_cause,
+        p_cause_cause,
+        cause_noise,
+        outcome_noise,
+        linear,
+        p_outcome_single=1,
+        p_outcome_double=1,
+        confounding_level=1.0,
+        train_frac=0.7,
+        val_frac=0.1,
+        real_data=False,
+        outcome_interaction=False,
+        outcome_interaction3=False,
+        no_confounder=False,
+        device=DEVICE,
+        dtype=DTYPE,
+    ):
         assert train_frac + val_frac <= 1
         self.n_confounder = n_confounder
         self.n_cause = n_cause
@@ -132,7 +155,7 @@ class DataGenerator:
         if not self.no_confounder:
             self.coefficient_confounder_cause = coef * mask
         else:
-            self.coefficient_confounder_cause = coef * 0.
+            self.coefficient_confounder_cause = coef * 0.0
 
     def get_coefficient_cause_cause(self):
         coef = np.random.randn(self.n_cause, self.n_cause)
@@ -141,7 +164,7 @@ class DataGenerator:
 
         children_list = [list() for i in range(self.n_cause)]
         for i in reversed(range(self.n_cause)):
-            children = list(np.where(mask[i, min(i+1, self.n_cause):])[0] + i + 1)
+            children = list(np.where(mask[i, min(i + 1, self.n_cause) :])[0] + i + 1)
 
             while True:
                 set_card = len(children)
@@ -164,7 +187,7 @@ class DataGenerator:
         if not self.no_confounder:
             self.coefficient_confounder_outcome = coef_confounder
         else:
-            self.coefficient_confounder_outcome = coef_confounder * 0.
+            self.coefficient_confounder_outcome = coef_confounder * 0.0
 
     def generate_confounder(self):
         """
@@ -173,7 +196,7 @@ class DataGenerator:
         if not self.no_confounder:
             self.confounder = np.random.randn(self.sample_size, self.n_confounder)
         else:
-            self.confounder = np.zeros((self.sample_size, self.n_confounder)) * 1.
+            self.confounder = np.zeros((self.sample_size, self.n_confounder)) * 1.0
 
     def get_one_cause(self, i, confounder_factor_mean, previous_causes):
         # K
@@ -181,7 +204,9 @@ class DataGenerator:
 
         # todo: add parameter here
         if i > 0:
-            cause_factor_mean = np.matmul(previous_causes, self.coefficient_cause_cause[:i, i]) / previous_causes.shape[1]
+            cause_factor_mean = (
+                np.matmul(previous_causes, self.coefficient_cause_cause[:i, i]) / previous_causes.shape[1]
+            )
         else:
             cause_factor_mean = 0
         cause_error = np.random.randn(self.sample_size) * self.cause_noise
@@ -190,7 +215,9 @@ class DataGenerator:
         return cause, cause_logit, cause_error
 
     def generate_cause(self):
-        confounder_factor_mean = np.matmul(self.confounder, self.coefficient_confounder_cause) / self.n_confounder * self.confounding_level
+        confounder_factor_mean = (
+            np.matmul(self.confounder, self.coefficient_confounder_cause) / self.n_confounder * self.confounding_level
+        )
 
         cause_list = []
         cause_logit_list = []
@@ -324,7 +351,7 @@ class DataGenerator:
             outcome = logistic(outcome / np.sqrt(self.n_confounder))
         return outcome
 
-    def generate_real_outcome(self, cause, confounder, noise=0.):
+    def generate_real_outcome(self, cause, confounder, noise=0.0):
         # feature dimension
         ones = np.ones((confounder.shape[0], 1))
         feat_dim = self.n_cause + self.n_confounder + 1
@@ -354,7 +381,7 @@ class DataGenerator:
         outcome_list = []
         for x in range(n_treatment):
             # 1, K
-            cause_setting = cause_ref[x:x+1, :]
+            cause_setting = cause_ref[x : x + 1, :]
             # N, K
             cause_sample = np.concatenate([cause_setting] * confounder.shape[0], axis=0)
             # N, K + D + 1
@@ -363,8 +390,8 @@ class DataGenerator:
             outcomes_mean = np.zeros((cause.shape[0], 1))
             loc = 0
             for i in range(feat.shape[1]):
-                for j in range(i+1, feat.shape[1]):
-                    this_feat = feat[:, i:i+1] * feat[:, j:j+1]
+                for j in range(i + 1, feat.shape[1]):
+                    this_feat = feat[:, i : i + 1] * feat[:, j : j + 1]
                     this_coef = coef_list[loc]
                     loc += 1
                     outcomes_mean = outcomes_mean + this_feat * this_coef
@@ -406,7 +433,7 @@ class DataGenerator:
             predicted = predicted_ranking[i]
             true = self.ranks[self.train_size + self.val_size + i]
             # scores = n_treatment - true[predicted.astype('int')]
-            scores = (true[predicted.astype('int')] < 5).astype('float')
+            scores = (true[predicted.astype("int")] < 5).astype("float")
             score_list.append(scores)
 
         # N, 2^K
@@ -418,7 +445,7 @@ class DataGenerator:
         outcome_tensor = np.concatenate(self.outcome_list, axis=-1)
         best_outcome = np.min(outcome_tensor, axis=-1)
         improvements = self.outcome - best_outcome[:, None]
-        return improvements[self.train_size + self.val_size:, 0]
+        return improvements[self.train_size + self.val_size :, 0]
 
     def get_predicted_improvements(self, order, k=5):
         pred_list = []
@@ -440,8 +467,8 @@ class DataGenerator:
 
     def generate_real(self):
         # load data
-        cause = pds.read_csv('real_data/cause.csv').values
-        confounder = pds.read_csv('real_data/confounder.csv').values
+        cause = pds.read_csv("real_data/cause.csv").values
+        confounder = pds.read_csv("real_data/confounder.csv").values
 
         assert cause.shape == (3080, 5)
         assert confounder.shape == (3080, 17)
@@ -474,14 +501,14 @@ class DataGenerator:
         return self.confounder, self.cause, self.outcome
 
     def split_xy(self, x, y):
-        x_train = x[:self.train_size]
-        y_train = y[:self.train_size]
+        x_train = x[: self.train_size]
+        y_train = y[: self.train_size]
 
-        x_val = x[self.train_size:self.train_size+self.val_size]
-        y_val = y[self.train_size:self.train_size+self.val_size]
+        x_val = x[self.train_size : self.train_size + self.val_size]
+        y_val = y[self.train_size : self.train_size + self.val_size]
 
-        x_test = x[self.train_size+self.val_size:]
-        y_test = y[self.train_size+self.val_size:]
+        x_test = x[self.train_size + self.val_size :]
+        y_test = y[self.train_size + self.val_size :]
 
         train_dataset = torch.utils.data.dataset.TensorDataset(self._make_tensor(x_train), self._make_tensor(y_train))
         valid_dataset = torch.utils.data.dataset.TensorDataset(self._make_tensor(x_val), self._make_tensor(y_val))
@@ -599,7 +626,7 @@ class DataGenerator:
         else:
             cause = new_cause
 
-        single_cause = cause[:, k_cause:(k_cause+1)]
+        single_cause = cause[:, k_cause : (k_cause + 1)]
 
         ancestor_cause = cause[:, :k_cause]
         try:
@@ -628,7 +655,6 @@ class DataGenerator:
             return self.split_xy(x, y)
         else:
             return self._make_tensor(x), self._make_tensor(y)
-
 
     #
     #
@@ -669,9 +695,10 @@ class DataGenerator:
     #
     #
     def get_x_potential_cause_oracle(self, k_cause, return_cause=False):
-        print('Use Oracle')
-        confounder_factor_mean = np.matmul(self.confounder,
-                                           self.coefficient_confounder_cause) / self.n_confounder * self.confounding_level
+        print("Use Oracle")
+        confounder_factor_mean = (
+            np.matmul(self.confounder, self.coefficient_confounder_cause) / self.n_confounder * self.confounding_level
+        )
 
         cause_list = []
         for i in range(self.n_cause):
@@ -679,11 +706,13 @@ class DataGenerator:
             if i < k_cause:
                 cause_list.append(self.cause[:, i])
             elif i == k_cause:
-                cause_list.append(1. - self.cause[:, i])
+                cause_list.append(1.0 - self.cause[:, i])
             else:
                 previous_causes = np.stack(cause_list, axis=-1)
                 mean = confounder_factor_mean[:, i]
-                cause_factor_mean = np.matmul(previous_causes, self.coefficient_cause_cause[:i, i]) / previous_causes.shape[1]
+                cause_factor_mean = (
+                    np.matmul(previous_causes, self.coefficient_cause_cause[:i, i]) / previous_causes.shape[1]
+                )
                 cause_error = self.cause_error[:, i]
                 cause_logit = mean + cause_factor_mean + cause_error
                 new_cause = np.random.binomial(1, logistic(cause_logit))
@@ -691,7 +720,7 @@ class DataGenerator:
         cause = np.stack(cause_list, axis=-1)
         x = np.concatenate((self.confounder, cause), axis=-1)
         if return_cause:
-            return cause,self._make_tensor(x)
+            return cause, self._make_tensor(x)
         else:
             return self._make_tensor(x)
 
@@ -700,7 +729,7 @@ class DataGenerator:
             potential_cause = potential_cause.cpu().numpy()
             cause = self.cause.copy()
 
-            cause[:, k_cause] = 1. - cause[:, k_cause]
+            cause[:, k_cause] = 1.0 - cause[:, k_cause]
 
             for i, j in enumerate(self.descendant[k_cause]):
                 cause[:, j] = potential_cause[:, i]
@@ -710,11 +739,11 @@ class DataGenerator:
 
             for i in range(cause.shape[1]):
                 if i == k_cause:
-                    cause[:, k_cause] = 1. - cause[:, k_cause]
+                    cause[:, k_cause] = 1.0 - cause[:, k_cause]
                 elif i < k_cause:
                     cause[:, i] = potential_cause[:, i]
                 else:
-                    cause[:, i] = potential_cause[:, i-1]
+                    cause[:, i] = potential_cause[:, i - 1]
 
         x = np.concatenate((self.confounder, cause), axis=-1)
         return self._make_tensor(x)
@@ -725,8 +754,8 @@ class DataGenerator:
         new_outcome = self.generate_counterfactual(new_cause)
         new_x = np.concatenate((self.confounder, new_cause), axis=-1)
 
-        cate_test = self._make_tensor((new_outcome - self.outcome)[self.train_size + self.val_size:])
-        new_x_test = self._make_tensor(new_x[self.train_size + self.val_size:])
+        cate_test = self._make_tensor((new_outcome - self.outcome)[self.train_size + self.val_size :])
+        new_x_test = self._make_tensor(new_x[self.train_size + self.val_size :])
         if weight is not None:
             new_x_test = torch.cat([new_x_test, new_x_test[:, 0:1]], dim=-1)
 
@@ -734,7 +763,7 @@ class DataGenerator:
         outcome_list = []
         for x in range(self.n_treatment):
             # 1, K
-            cause_setting = self.cause_ref[x:x + 1, :]
+            cause_setting = self.cause_ref[x : x + 1, :]
             new_cause = np.concatenate([cause_setting] * self.sample_size, axis=0)
 
             this_outcome = self.generate_counterfactual(new_cause)
@@ -752,8 +781,8 @@ class DataGenerator:
         new_outcome = self.generate_counterfactual(new_cause)
         new_x = np.concatenate((self.confounder, pc, new_cause), axis=-1)
 
-        cate_test = self._make_tensor((new_outcome - self.outcome)[self.train_size + self.val_size:])
-        new_x_test = self._make_tensor(new_x[self.train_size + self.val_size:])
+        cate_test = self._make_tensor((new_outcome - self.outcome)[self.train_size + self.val_size :])
+        new_x_test = self._make_tensor(new_x[self.train_size + self.val_size :])
         if weight is not None:
             new_x_test = torch.cat([new_x_test, new_x_test[:, 0:1]], dim=-1)
 
@@ -761,7 +790,7 @@ class DataGenerator:
         outcome_list = []
         for x in range(self.n_treatment):
             # 1, K
-            cause_setting = self.cause_ref[x:x + 1, :]
+            cause_setting = self.cause_ref[x : x + 1, :]
             new_cause = np.concatenate([cause_setting] * self.sample_size, axis=0)
 
             this_outcome = self.generate_counterfactual(new_cause)
@@ -779,13 +808,13 @@ class DataGenerator:
 
         for x in range(n_treatment):
             # 1, K
-            cause_setting = self.cause_ref[x:x + 1, :]
+            cause_setting = self.cause_ref[x : x + 1, :]
             # N, K
             new_cause = np.concatenate([cause_setting] * self.confounder.shape[0], axis=0)
             # N, K + D + 1
             new_x = np.concatenate((self.confounder, new_cause), axis=-1)
 
-            new_x_test = self._make_tensor(new_x[self.train_size + self.val_size:])
+            new_x_test = self._make_tensor(new_x[self.train_size + self.val_size :])
 
             if weight is not None:
                 new_x_test = torch.cat([new_x_test, new_x_test[:, 0:1]], dim=-1)
@@ -800,7 +829,7 @@ class DataGenerator:
 
         for x in range(n_treatment):
             # 1, K
-            cause_setting = self.cause_ref[x:x + 1, :]
+            cause_setting = self.cause_ref[x : x + 1, :]
             # N, K
             new_cause = np.concatenate([cause_setting] * self.confounder.shape[0], axis=0)
 
@@ -808,7 +837,7 @@ class DataGenerator:
             # N, K + D + 1
             new_x = np.concatenate((self.confounder, pc, new_cause), axis=-1)
 
-            new_x_test = self._make_tensor(new_x[self.train_size + self.val_size:])
+            new_x_test = self._make_tensor(new_x[self.train_size + self.val_size :])
 
             if weight is not None:
                 new_x_test = torch.cat([new_x_test, new_x_test[:, 0:1]], dim=-1)
@@ -823,7 +852,7 @@ class DataGenerator:
 
         for x in range(n_treatment):
             # 1, K
-            cause_setting = self.cause_ref[x:x + 1, :]
+            cause_setting = self.cause_ref[x : x + 1, :]
             # N, K
             new_cause = np.concatenate([cause_setting] * self.confounder.shape[0], axis=0)
 
@@ -831,7 +860,7 @@ class DataGenerator:
             # N, K + D + 1
             new_x = np.concatenate((self.confounder, cause_ind), axis=-1)
 
-            new_x_test = self._make_tensor(new_x[self.train_size + self.val_size:])
+            new_x_test = self._make_tensor(new_x[self.train_size + self.val_size :])
 
             if weight is not None:
                 new_x_test = torch.cat([new_x_test, new_x_test[:, 0:1]], dim=-1)
@@ -868,7 +897,7 @@ class DataGenerator:
         sd_ndcg = np.std(scores) / np.sqrt(scores.shape[0])
 
         # ranking dist
-        rank_dist = np.sum(np.abs(self.ranks[self.val_size+self.train_size:, :] - ranks_predicted), axis=-1)
+        rank_dist = np.sum(np.abs(self.ranks[self.val_size + self.train_size :, :] - ranks_predicted), axis=-1)
         rank_mean = np.mean(rank_dist)
         rank_sd = np.std(rank_dist) / np.sqrt(rank_dist.shape[0])
 
@@ -882,12 +911,18 @@ class DataGenerator:
         mean_oracle = np.median(oracle)
         sd_oracle = np.std(oracle) / np.sqrt(oracle.shape[0])
 
-        print(round(float(mean_ndcg), 3), round(sd_ndcg, 3),
-              round(float(mean_improvements), 3), round(sd_improvements, 3),
-              round(float(rank_mean), 3), round(rank_sd, 3),
-              round(float(pehe), 3), round(pehe_sd, 3),
-              round(float(rmse), 3), round(rmse_sd, 3)
-              )
+        print(
+            round(float(mean_ndcg), 3),
+            round(sd_ndcg, 3),
+            round(float(mean_improvements), 3),
+            round(sd_improvements, 3),
+            round(float(rank_mean), 3),
+            round(rank_sd, 3),
+            round(float(pehe), 3),
+            round(pehe_sd, 3),
+            round(float(rmse), 3),
+            round(rmse_sd, 3),
+        )
         # print(round(float(mean_ndcg), 3), round(sd_ndcg, 3))
         # print(round(float(mean_improvements), 3), round(sd_improvements, 3))
         # print(round(float(mean_oracle), 3), round(sd_oracle, 3))
@@ -904,17 +939,16 @@ class DataGenerator:
 
         new_outcome = self.generate_counterfactual(new_cause.cpu().numpy())
 
-        cate_test = self._make_tensor((new_outcome - self.outcome)[self.train_size + self.val_size:])
-        new_x_test = self._make_tensor(x[self.train_size + self.val_size:])
+        cate_test = self._make_tensor((new_outcome - self.outcome)[self.train_size + self.val_size :])
+        new_x_test = self._make_tensor(x[self.train_size + self.val_size :])
         if weight is not None:
             new_x_test = torch.cat([new_x_test, new_x_test[:, 0:1]], dim=-1)
-
 
         # generate all counterfactual outcomes
         outcome_list = []
         for x in range(self.n_treatment):
             # 1, K
-            cause_setting = self.cause_ref[x:x + 1, :]
+            cause_setting = self.cause_ref[x : x + 1, :]
             new_cause = np.concatenate([cause_setting] * self.confounder.shape[0], axis=0)
 
             this_outcome = self.generate_counterfactual(new_cause)
@@ -934,14 +968,22 @@ class DataGenerator:
             tmp = np.zeros((self.sample_size, self.n_cause))
             tmp[np.arange(self.sample_size), flip_index[:, i]] = 1
             flip_onehot += tmp
-        new_cause = self.cause * (1 - flip_onehot) + (1. - self.cause) * flip_onehot
+        new_cause = self.cause * (1 - flip_onehot) + (1.0 - self.cause) * flip_onehot
         return new_cause
 
 
-if __name__ == '__main__':
-    dg = DataGenerator(n_confounder=1, n_cause=2, n_outcome=1, sample_size=4,
-                       p_confounder_cause=0, p_cause_cause=1,
-                       cause_noise=0, outcome_noise=0, linear=True)
+if __name__ == "__main__":
+    dg = DataGenerator(
+        n_confounder=1,
+        n_cause=2,
+        n_outcome=1,
+        sample_size=4,
+        p_confounder_cause=0,
+        p_cause_cause=1,
+        cause_noise=0,
+        outcome_noise=0,
+        linear=True,
+    )
     confounder1, cause1, outcome1 = dg.generate()
     # print(confounder)
     print(cause1)

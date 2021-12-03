@@ -1,12 +1,13 @@
 import argparse
+import shutil
 
 import torch.nn as nn
+
 import sim_config
-from sim_data_gen import DataGenerator
 from mlp import DirectOutcomeRegression, ModelTrainer
 from propensity import PropensityNetwork
+from sim_data_gen import DataGenerator
 from utils import *
-import shutil
 
 
 def run(d_config, eval_only=False, eval_delta=False, save_data=False, seed=None):
@@ -27,8 +28,8 @@ def run(d_config, eval_only=False, eval_delta=False, save_data=False, seed=None)
 
     batch_size = 100
     max_epoch = 100
-    model_id = 'IPW'
-    model_path = 'model/{}_{}_model/'.format(model_id, d_config.sim_id)
+    model_id = "IPW"
+    model_path = "model/{}_{}_model/".format(model_id, d_config.sim_id)
     if not eval_only:
         try:
             shutil.rmtree(model_path)
@@ -50,35 +51,58 @@ def run(d_config, eval_only=False, eval_delta=False, save_data=False, seed=None)
         else:
             train_ratio = sample_size / 1000
 
-        dg = DataGenerator(n_confounder, n_cause, n_outcome, sample_size,
-                           p_confounder_cause, p_cause_cause,
-                           cause_noise, outcome_noise, linear=linear, confounding_level=d_config.confounding_level,
-                           real_data=d_config.real_data, train_frac=0.7/train_ratio, val_frac=0.1/train_ratio,
-                           p_outcome_single=p_outcome_single, p_outcome_double=p_outcome_double, outcome_interaction=outcome_interaction)
+        dg = DataGenerator(
+            n_confounder,
+            n_cause,
+            n_outcome,
+            sample_size,
+            p_confounder_cause,
+            p_cause_cause,
+            cause_noise,
+            outcome_noise,
+            linear=linear,
+            confounding_level=d_config.confounding_level,
+            real_data=d_config.real_data,
+            train_frac=0.7 / train_ratio,
+            val_frac=0.1 / train_ratio,
+            p_outcome_single=p_outcome_single,
+            p_outcome_double=p_outcome_double,
+            outcome_interaction=outcome_interaction,
+        )
     else:
         valid_sample_size = 200
         eval_sample_size = 4100
         train_sample_size = sample_size_train
         sample_size = train_sample_size + valid_sample_size + eval_sample_size
-        dg = DataGenerator(n_confounder, n_cause, n_outcome, sample_size,
-                           p_confounder_cause, p_cause_cause,
-                           cause_noise, outcome_noise, linear=linear, confounding_level=d_config.confounding_level,
-                           real_data=d_config.real_data, train_frac=train_sample_size / sample_size,
-                           val_frac=valid_sample_size / sample_size,
-                           p_outcome_single=p_outcome_single, p_outcome_double=p_outcome_double,
-                           outcome_interaction=outcome_interaction)
+        dg = DataGenerator(
+            n_confounder,
+            n_cause,
+            n_outcome,
+            sample_size,
+            p_confounder_cause,
+            p_cause_cause,
+            cause_noise,
+            outcome_noise,
+            linear=linear,
+            confounding_level=d_config.confounding_level,
+            real_data=d_config.real_data,
+            train_frac=train_sample_size / sample_size,
+            val_frac=valid_sample_size / sample_size,
+            p_outcome_single=p_outcome_single,
+            p_outcome_double=p_outcome_double,
+            outcome_interaction=outcome_interaction,
+        )
 
     # train_dataset, valid_dataset, x_test, y_test = dg.generate_dataset()
-
 
     train_dataset_p, valid_dataset_p, x_test_p, y_test_p = dg.generate_dataset_propensity()
 
     # train propensity network
-    propensity_net = PropensityNetwork(n_confounder, n_cause, n_hidden=n_confounder+n_cause)
+    propensity_net = PropensityNetwork(n_confounder, n_cause, n_hidden=n_confounder + n_cause)
 
     optimizer = torch.optim.SGD(propensity_net.parameters(), lr=learning_rate)
 
-    trainer = ModelTrainer(batch_size, 5000, propensity_net.loss, model_id + '-PN', model_path)
+    trainer = ModelTrainer(batch_size, 5000, propensity_net.loss, model_id + "-PN", model_path)
 
     trainer.train(propensity_net, optimizer, train_dataset_p, valid_dataset_p, print_every=100)
 
@@ -86,9 +110,9 @@ def run(d_config, eval_only=False, eval_delta=False, save_data=False, seed=None)
     weight = propensity_net.get_weight(x, y).unsqueeze(-1).cpu().numpy()
 
     if save_data:
-        x = dg._make_tensor(np.concatenate((dg.confounder, dg.cause), axis=-1))[:dg.train_size]
-        torch.save(x, '{}_{}_{}_x.pth'.format(d_config.sim_id, model_id, seed))
-        torch.save(weight[:dg.train_size], '{}_{}_{}_w.pth'.format(d_config.sim_id, model_id, seed))
+        x = dg._make_tensor(np.concatenate((dg.confounder, dg.cause), axis=-1))[: dg.train_size]
+        torch.save(x, "{}_{}_{}_x.pth".format(d_config.sim_id, model_id, seed))
+        torch.save(weight[: dg.train_size], "{}_{}_{}_w.pth".format(d_config.sim_id, model_id, seed))
         return 0
 
     print(weight.shape)
@@ -104,9 +128,11 @@ def run(d_config, eval_only=False, eval_delta=False, save_data=False, seed=None)
     err_list = list()
     param_list = get_scp_config(hyper_param_itr, n_confounder, p_confounder_cause)
     for param in param_list:
-        model_id_to_save = model_id + '-OR_itr_{}'.format(param.itr)
+        model_id_to_save = model_id + "-OR_itr_{}".format(param.itr)
 
-        model = DirectOutcomeRegression(n_confounder, n_cause, n_outcome, n_hidden=param.n_outcome_rep + param.n_confounder_rep, weighted=True)
+        model = DirectOutcomeRegression(
+            n_confounder, n_cause, n_outcome, n_hidden=param.n_outcome_rep + param.n_confounder_rep, weighted=True
+        )
         optimizer = torch.optim.SGD(model.parameters(), lr=param.learning_rate)
 
         trainer = ModelTrainer(param.batch_size, max_epoch, model.loss, model_id_to_save, model_path)
@@ -125,14 +151,15 @@ def run(d_config, eval_only=False, eval_delta=False, save_data=False, seed=None)
     # select model with best hyper-parameter
     best_index = int(np.argmin(np.array(err_list)))
     best_param = param_list[best_index]
-    print('Best param:', best_param)
-    model_id_to_load = model_id + '-OR_itr_{}'.format(best_param.itr)
-    model = DirectOutcomeRegression(n_confounder, n_cause, n_outcome,
-                                    n_hidden=best_param.n_outcome_rep + best_param.n_confounder_rep, weighted=True)
+    print("Best param:", best_param)
+    model_id_to_load = model_id + "-OR_itr_{}".format(best_param.itr)
+    model = DirectOutcomeRegression(
+        n_confounder, n_cause, n_outcome, n_hidden=best_param.n_outcome_rep + best_param.n_confounder_rep, weighted=True
+    )
 
     # load best iteration
     _, model_file = load_model(model, model_path, model_id_to_load)
-    torch.save(model, model_path + 'best.pth')
+    torch.save(model, model_path + "best.pth")
     if eval_delta:
         for j in range(n_cause):
             n_flip = j + 1
@@ -143,7 +170,7 @@ def run(d_config, eval_only=False, eval_delta=False, save_data=False, seed=None)
                 cate_hat = y_hat1 - y_hat0
                 error = torch.sqrt(rmse(cate_hat, cate_test))
                 rmse_sd = bootstrap_RMSE((cate_hat - cate_test) ** 2)
-                print('propensity', n_flip, round(error.item(), 3), round(rmse_sd, 3))
+                print("propensity", n_flip, round(error.item(), 3), round(rmse_sd, 3))
         return 0
     with torch.no_grad():
         y_list = []
@@ -175,17 +202,17 @@ def run(d_config, eval_only=False, eval_delta=False, save_data=False, seed=None)
         dg.evaluate_real(y_list)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # config = sim_config.independent_cause
     # config1 = sim_config.sim_dict['real_3000']
 
     # run(config1)
 
     # run ablation
-    parser = argparse.ArgumentParser('Ablation')
-    parser.add_argument('--config', type=str)
-    parser.add_argument('--save_data', type=bool, default=False)
-    parser.add_argument('--seed', type=int, default=None)
+    parser = argparse.ArgumentParser("Ablation")
+    parser.add_argument("--config", type=str)
+    parser.add_argument("--save_data", type=bool, default=False)
+    parser.add_argument("--seed", type=int, default=None)
 
     args = parser.parse_args()
 
@@ -198,4 +225,3 @@ if __name__ == '__main__':
         exit(-1)
 
     run(config1, save_data=args.save_data, seed=args.seed)
-

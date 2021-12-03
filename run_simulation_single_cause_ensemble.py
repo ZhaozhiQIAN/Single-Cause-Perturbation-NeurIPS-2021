@@ -1,9 +1,10 @@
-import shutil
 import argparse
+import shutil
+
 import torch.nn as nn
 
 import sim_config
-from mlp import ModelTrainer, DirectOutcomeRegression
+from mlp import DirectOutcomeRegression, ModelTrainer
 from sim_data_gen import DataGenerator
 from utils import *
 
@@ -17,8 +18,8 @@ def get_scp_data(dataset, single_cause_index, model, data_gen=None, oracle=False
         with torch.no_grad():
             y_train = model(x_train)[0]
     else:
-        print('Use Oracle')
-        causes = x_train[:, data_gen.n_confounder:].cpu().numpy()
+        print("Use Oracle")
+        causes = x_train[:, data_gen.n_confounder :].cpu().numpy()
 
         if is_train:
             pad = np.zeros((data_gen.sample_size - causes.shape[0], data_gen.n_cause))
@@ -31,9 +32,9 @@ def get_scp_data(dataset, single_cause_index, model, data_gen=None, oracle=False
         y_train_total = data_gen.generate_counterfactual(causes_total)
 
         if is_train:
-            y_train = y_train_total[:data_gen.train_size, :]
+            y_train = y_train_total[: data_gen.train_size, :]
         else:
-            y_train = y_train_total[data_gen.train_size:data_gen.train_size+data_gen.val_size, :]
+            y_train = y_train_total[data_gen.train_size : data_gen.train_size + data_gen.val_size, :]
 
         y_train = torch.tensor(y_train).to(x_train)
     return x_train, y_train
@@ -44,13 +45,14 @@ def get_scp_data_potential_cause(x_train, model, data_gen=None, oracle=False):
         with torch.no_grad():
             y_train = model(x_train)[0]
     else:
-        print('Use Oracle')
+        print("Use Oracle")
         assert data_gen is not None
         x_train1 = x_train.cpu().numpy()
-        causes = x_train1[:, data_gen.n_confounder:]
+        causes = x_train1[:, data_gen.n_confounder :]
         y_train = data_gen.generate_counterfactual(causes)
         y_train = torch.tensor(y_train).to(x_train)
     return y_train
+
 
 def run(d_config, ablate=None, hyper_param_itr=5, train_ratio=None, eval_only=False):
     n_confounder = d_config.n_confounder
@@ -73,9 +75,9 @@ def run(d_config, ablate=None, hyper_param_itr=5, train_ratio=None, eval_only=Fa
         ablate = sim_config.AblationConfig()
 
     max_epoch = 100
-    model_id = 'SCP-ENS' if not ablate.is_ablate else 'SCP-ENS-{}'.format(ablate.ablation_id)
+    model_id = "SCP-ENS" if not ablate.is_ablate else "SCP-ENS-{}".format(ablate.ablation_id)
 
-    model_path = 'model/{}_{}_model/'.format(model_id, d_config.sim_id)
+    model_path = "model/{}_{}_model/".format(model_id, d_config.sim_id)
     if not eval_only:
         try:
             shutil.rmtree(model_path)
@@ -89,11 +91,24 @@ def run(d_config, ablate=None, hyper_param_itr=5, train_ratio=None, eval_only=Fa
     np.random.seed(seed)
     torch.manual_seed(seed)
 
-    dg = DataGenerator(n_confounder, n_cause, n_outcome, sample_size,
-                       p_confounder_cause, p_cause_cause,
-                       cause_noise, outcome_noise, linear=linear, confounding_level=d_config.confounding_level,
-                       real_data=d_config.real_data, train_frac=0.7/train_ratio, val_frac=0.1/train_ratio,
-                       p_outcome_single=p_outcome_single, p_outcome_double=p_outcome_double, outcome_interaction=outcome_interaction)
+    dg = DataGenerator(
+        n_confounder,
+        n_cause,
+        n_outcome,
+        sample_size,
+        p_confounder_cause,
+        p_cause_cause,
+        cause_noise,
+        outcome_noise,
+        linear=linear,
+        confounding_level=d_config.confounding_level,
+        real_data=d_config.real_data,
+        train_frac=0.7 / train_ratio,
+        val_frac=0.1 / train_ratio,
+        p_outcome_single=p_outcome_single,
+        p_outcome_double=p_outcome_double,
+        outcome_interaction=outcome_interaction,
+    )
 
     train_dataset, valid_dataset, x_test, y_test = dg.generate_dataset()
 
@@ -102,12 +117,9 @@ def run(d_config, ablate=None, hyper_param_itr=5, train_ratio=None, eval_only=Fa
 
     new_x_list = dg.generate_test_real()
 
-
     print(np.mean(dg.cause, axis=0))
 
     # iterate over each cause
-
-
 
     x_train_scp_list = [train_dataset.tensors[0].detach().clone()]
     y_train_scp_list = [train_dataset.tensors[1].detach().clone()]
@@ -124,7 +136,7 @@ def run(d_config, ablate=None, hyper_param_itr=5, train_ratio=None, eval_only=Fa
         # hyper-parameter search
         for param in param_list:
             # train single cause po model
-            model_id_to_save = model_id + '_cause_{}_po_itr_{}'.format(single_cause_index, param.itr)
+            model_id_to_save = model_id + "_cause_{}_po_itr_{}".format(single_cause_index, param.itr)
             model = create_DR_CRN(single_cause_index, d_config, param)
             optimizer = torch.optim.Adam(model.parameters(), lr=param.learning_rate)
             if not ablate.oracle_po:
@@ -146,21 +158,21 @@ def run(d_config, ablate=None, hyper_param_itr=5, train_ratio=None, eval_only=Fa
                 # print(treated_label)
                 # print(treated_label.shape)
 
-                weight = (treated_label * 1. - propensity) / (1. - propensity + 1E-9) / (propensity + 1E-9)
+                weight = (treated_label * 1.0 - propensity) / (1.0 - propensity + 1e-9) / (propensity + 1e-9)
                 # print(weight)
                 # print(torch.sum(torch.isnan(weight)))
                 # error = torch.mean((weight * (y_hat - y_valid)) ** 2)
                 #
                 error = torch.sqrt(rmse(y_hat, y_valid))
-                print('Validation error:', round(error.item(), 3))
+                print("Validation error:", round(error.item(), 3))
                 err_list.append(error)
 
         # select model with best hyper-parameter
         best_index = int(np.argmin(np.array(err_list)))
         best_param = param_list[best_index]
-        print('Best param:', best_param)
-        model_id_to_load = model_id + '_cause_{}_po_itr_{}'.format(single_cause_index, best_param.itr)
-        model_id_best = model_id + '_cause_{}_po.pt'.format(single_cause_index)
+        print("Best param:", best_param)
+        model_id_to_load = model_id + "_cause_{}_po_itr_{}".format(single_cause_index, best_param.itr)
+        model_id_best = model_id + "_cause_{}_po.pt".format(single_cause_index)
         model = create_DR_CRN(single_cause_index, d_config, best_param)
 
         # load best iteration
@@ -192,8 +204,8 @@ def run(d_config, ablate=None, hyper_param_itr=5, train_ratio=None, eval_only=Fa
             rmse_sd = bootstrap_RMSE((cate_hat - cate_test) ** 2)
 
             y_mat_true = np.concatenate(dg.outcome_list, axis=-1)
-            print('y_mat_true', y_mat_true.shape)
-            print('y_mat', y_mat.shape)
+            print("y_mat_true", y_mat_true.shape)
+            print("y_mat", y_mat.shape)
             # N, 2^K
             n_test = y_mat.shape[0]
             err_all = np.sum((y_mat_true[-n_test:, :] - y_mat) ** 2, axis=1)
@@ -204,11 +216,11 @@ def run(d_config, ablate=None, hyper_param_itr=5, train_ratio=None, eval_only=Fa
     else:
         y_list = []
         for i in range(y_mat.shape[1]):
-            y_list.append(y_mat[:, i+i+1])
+            y_list.append(y_mat[:, i + i + 1])
         dg.evaluate_real(y_list)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # config1 = sim_config.sim_dict['real_3000']
     # run(config1)
 
@@ -221,34 +233,42 @@ if __name__ == '__main__':
     # run(config1, abl_config)
 
     # run ablation
-    parser = argparse.ArgumentParser('Ablation')
-    parser.add_argument('--ablation', type=str, default='None')
-    parser.add_argument('--config', type=str)
+    parser = argparse.ArgumentParser("Ablation")
+    parser.add_argument("--ablation", type=str, default="None")
+    parser.add_argument("--config", type=str)
 
     args = parser.parse_args()
 
-    i = args.ablation.find('perturb_subset')
+    i = args.ablation.find("perturb_subset")
     if i >= 0:
-        subset = int(args.ablation.split('-')[-1])
+        subset = int(args.ablation.split("-")[-1])
         ablation = args.ablation[:i]
     else:
         subset = 10000
         ablation = args.ablation
 
-    if ablation == 'None':
+    if ablation == "None":
         abl_config = None
-    elif ablation == 'exact_single_cause':
-        abl_config = sim_config.AblationConfig(exact_single_cause=True, perturb_subset=subset, ablation_id='exact_single_cause')
-    elif ablation == 'predict_all_causes':
-        abl_config = sim_config.AblationConfig(predict_all_causes=True, perturb_subset=subset, ablation_id='predict_all_causes')
-    elif ablation == 'oracle_po':
-        abl_config = sim_config.AblationConfig(oracle_po=True, perturb_subset=subset, ablation_id='oracle_po')
-    elif ablation == 'oracle_potential_cause':
-        abl_config = sim_config.AblationConfig(oracle_potential_cause=True, perturb_subset=subset, ablation_id='oracle_potential_cause')
-    elif ablation == 'oracle_all':
-        abl_config = sim_config.AblationConfig(oracle_po=True, perturb_subset=subset, oracle_potential_cause=True, ablation_id='oracle_all')
-    elif args.ablation.find('perturb_subset') >= 0:
-        subset = int(args.ablation.split('-')[-1])
+    elif ablation == "exact_single_cause":
+        abl_config = sim_config.AblationConfig(
+            exact_single_cause=True, perturb_subset=subset, ablation_id="exact_single_cause"
+        )
+    elif ablation == "predict_all_causes":
+        abl_config = sim_config.AblationConfig(
+            predict_all_causes=True, perturb_subset=subset, ablation_id="predict_all_causes"
+        )
+    elif ablation == "oracle_po":
+        abl_config = sim_config.AblationConfig(oracle_po=True, perturb_subset=subset, ablation_id="oracle_po")
+    elif ablation == "oracle_potential_cause":
+        abl_config = sim_config.AblationConfig(
+            oracle_potential_cause=True, perturb_subset=subset, ablation_id="oracle_potential_cause"
+        )
+    elif ablation == "oracle_all":
+        abl_config = sim_config.AblationConfig(
+            oracle_po=True, perturb_subset=subset, oracle_potential_cause=True, ablation_id="oracle_all"
+        )
+    elif args.ablation.find("perturb_subset") >= 0:
+        subset = int(args.ablation.split("-")[-1])
         abl_config = sim_config.AblationConfig(perturb_subset=subset, ablation_id=args.ablation)
     else:
         exit(-1)
@@ -261,4 +281,4 @@ if __name__ == '__main__':
         print(config_key)
         exit(-1)
 
-    run(config1, ablate=abl_config, hyper_param_itr=1, train_ratio=5.)
+    run(config1, ablate=abl_config, hyper_param_itr=1, train_ratio=5.0)

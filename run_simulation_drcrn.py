@@ -1,10 +1,12 @@
-import torch.nn as nn
-import sim_config
-from sim_data_gen import DataGenerator
-from mlp import ModelTrainer
-from dr_crn import DR_CRN_Multicause
-from utils import *
 import shutil
+
+import torch.nn as nn
+
+import sim_config
+from dr_crn import DR_CRN_Multicause
+from mlp import ModelTrainer
+from sim_data_gen import DataGenerator
+from utils import *
 
 
 def run(d_config, eval_only=False, eval_delta=False):
@@ -24,8 +26,8 @@ def run(d_config, eval_only=False, eval_delta=False):
     sample_size_train = d_config.sample_size_train
 
     max_epoch = 500
-    model_id = 'DR-CRN'
-    model_path = 'model/{}_{}_model/'.format(model_id, d_config.sim_id)
+    model_id = "DR-CRN"
+    model_path = "model/{}_{}_model/".format(model_id, d_config.sim_id)
     if not eval_only:
         try:
             shutil.rmtree(model_path)
@@ -45,23 +47,47 @@ def run(d_config, eval_only=False, eval_delta=False):
         else:
             train_ratio = sample_size / 1000
 
-        dg = DataGenerator(n_confounder, n_cause, n_outcome, sample_size,
-                           p_confounder_cause, p_cause_cause,
-                           cause_noise, outcome_noise, linear=linear, confounding_level=d_config.confounding_level,
-                           real_data=d_config.real_data, train_frac=0.7/train_ratio, val_frac=0.1/train_ratio,
-                           p_outcome_single=p_outcome_single, p_outcome_double=p_outcome_double, outcome_interaction=outcome_interaction)
+        dg = DataGenerator(
+            n_confounder,
+            n_cause,
+            n_outcome,
+            sample_size,
+            p_confounder_cause,
+            p_cause_cause,
+            cause_noise,
+            outcome_noise,
+            linear=linear,
+            confounding_level=d_config.confounding_level,
+            real_data=d_config.real_data,
+            train_frac=0.7 / train_ratio,
+            val_frac=0.1 / train_ratio,
+            p_outcome_single=p_outcome_single,
+            p_outcome_double=p_outcome_double,
+            outcome_interaction=outcome_interaction,
+        )
     else:
         valid_sample_size = 200
         eval_sample_size = 4100
         train_sample_size = sample_size_train
         sample_size = train_sample_size + valid_sample_size + eval_sample_size
-        dg = DataGenerator(n_confounder, n_cause, n_outcome, sample_size,
-                           p_confounder_cause, p_cause_cause,
-                           cause_noise, outcome_noise, linear=linear, confounding_level=d_config.confounding_level,
-                           real_data=d_config.real_data, train_frac=train_sample_size / sample_size,
-                           val_frac=valid_sample_size / sample_size,
-                           p_outcome_single=p_outcome_single, p_outcome_double=p_outcome_double,
-                           outcome_interaction=outcome_interaction)
+        dg = DataGenerator(
+            n_confounder,
+            n_cause,
+            n_outcome,
+            sample_size,
+            p_confounder_cause,
+            p_cause_cause,
+            cause_noise,
+            outcome_noise,
+            linear=linear,
+            confounding_level=d_config.confounding_level,
+            real_data=d_config.real_data,
+            train_frac=train_sample_size / sample_size,
+            val_frac=valid_sample_size / sample_size,
+            p_outcome_single=p_outcome_single,
+            p_outcome_double=p_outcome_double,
+            outcome_interaction=outcome_interaction,
+        )
 
     train_dataset, valid_dataset, x_test, y_test = dg.generate_dataset_tarnet()
 
@@ -75,10 +101,15 @@ def run(d_config, eval_only=False, eval_delta=False):
     err_list = list()
     param_list = get_scp_config(hyper_param_itr, n_confounder, p_confounder_cause)
     for param in param_list:
-        model_id_to_save = model_id + '_itr_{}'.format(param.itr)
+        model_id_to_save = model_id + "_itr_{}".format(param.itr)
 
-        model = DR_CRN_Multicause(n_confounder, n_cause, n_outcome, n_confounder_rep=param.n_confounder_rep*2,
-                                  n_outcome_rep=param.n_outcome_rep*2)
+        model = DR_CRN_Multicause(
+            n_confounder,
+            n_cause,
+            n_outcome,
+            n_confounder_rep=param.n_confounder_rep * 2,
+            n_outcome_rep=param.n_outcome_rep * 2,
+        )
         optimizer = torch.optim.SGD(model.parameters(), lr=param.learning_rate)
 
         trainer = ModelTrainer(param.batch_size, max_epoch, model.loss, model_id_to_save, model_path)
@@ -97,14 +128,19 @@ def run(d_config, eval_only=False, eval_delta=False):
     # select model with best hyper-parameter
     best_index = int(np.argmin(np.array(err_list)))
     best_param = param_list[best_index]
-    print('Best param:', best_param)
-    model_id_to_load = model_id + '_itr_{}'.format(best_param.itr)
-    model = DR_CRN_Multicause(n_confounder, n_cause, n_outcome, n_confounder_rep=best_param.n_confounder_rep*2,
-                              n_outcome_rep=best_param.n_outcome_rep*2)
+    print("Best param:", best_param)
+    model_id_to_load = model_id + "_itr_{}".format(best_param.itr)
+    model = DR_CRN_Multicause(
+        n_confounder,
+        n_cause,
+        n_outcome,
+        n_confounder_rep=best_param.n_confounder_rep * 2,
+        n_outcome_rep=best_param.n_outcome_rep * 2,
+    )
 
     # load best iteration
     _, model_file = load_model(model, model_path, model_id_to_load)
-    torch.save(model, model_path + 'best.pth')
+    torch.save(model, model_path + "best.pth")
 
     if eval_delta:
         for j in range(n_cause):
@@ -116,7 +152,7 @@ def run(d_config, eval_only=False, eval_delta=False):
                 cate_hat = y_hat1 - y_hat0
                 error = torch.sqrt(rmse(cate_hat, cate_test))
                 rmse_sd = bootstrap_RMSE((cate_hat - cate_test) ** 2)
-                print('drcrn', n_flip, round(error.item(), 3), round(rmse_sd, 3))
+                print("drcrn", n_flip, round(error.item(), 3), round(rmse_sd, 3))
         return 0
 
     with torch.no_grad():
@@ -148,7 +184,7 @@ def run(d_config, eval_only=False, eval_delta=False):
         dg.evaluate_real(y_list)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # config = sim_config.independent_cause
-    config1 = sim_config.sim_dict['real_3000']
+    config1 = sim_config.sim_dict["real_3000"]
     run(config1)

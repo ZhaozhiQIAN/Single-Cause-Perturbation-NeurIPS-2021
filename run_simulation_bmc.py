@@ -1,11 +1,13 @@
 import argparse
+import shutil
 
 import torch.nn as nn
+
 import sim_config
-from sim_data_gen import DataGenerator
 from mlp import DirectOutcomeRegression, ModelTrainer
+from sim_data_gen import DataGenerator
 from utils import *
-import shutil
+
 
 def run(d_config, eval_only=False, n_ensemble=0, eval_delta=False):
     n_confounder = d_config.n_confounder
@@ -22,14 +24,14 @@ def run(d_config, eval_only=False, n_ensemble=0, eval_delta=False):
     p_outcome_double = d_config.p_outcome_double
     outcome_interaction = d_config.outcome_interaction
     sample_size_train = d_config.sample_size_train
-    print('sample_size', sample_size)
+    print("sample_size", sample_size)
 
     n_ensemble += 1
 
     batch_size = 100
     max_epoch = 100
-    model_id = 'BMC'
-    model_path = 'model/{}_{}_model/'.format(model_id, d_config.sim_id)
+    model_id = "BMC"
+    model_path = "model/{}_{}_model/".format(model_id, d_config.sim_id)
     if not eval_only:
         try:
             shutil.rmtree(model_path)
@@ -50,40 +52,77 @@ def run(d_config, eval_only=False, n_ensemble=0, eval_delta=False):
 
     if sample_size_train == 0:
         if n_ensemble == 1:
-            print('generating data')
-            dg = DataGenerator(n_confounder, n_cause, n_outcome, sample_size,
-                               p_confounder_cause, p_cause_cause,
-                               cause_noise, outcome_noise, linear=linear, confounding_level=d_config.confounding_level,
-                               real_data=d_config.real_data, train_frac=0.7/train_ratio, val_frac=0.1/train_ratio,
-                               p_outcome_single=p_outcome_single, p_outcome_double=p_outcome_double, outcome_interaction=outcome_interaction)
+            print("generating data")
+            dg = DataGenerator(
+                n_confounder,
+                n_cause,
+                n_outcome,
+                sample_size,
+                p_confounder_cause,
+                p_cause_cause,
+                cause_noise,
+                outcome_noise,
+                linear=linear,
+                confounding_level=d_config.confounding_level,
+                real_data=d_config.real_data,
+                train_frac=0.7 / train_ratio,
+                val_frac=0.1 / train_ratio,
+                p_outcome_single=p_outcome_single,
+                p_outcome_double=p_outcome_double,
+                outcome_interaction=outcome_interaction,
+            )
         else:
             train_sample_size = 700 * n_ensemble
             valid_sample_size = 200
             eval_sample_size = 4100
             sample_size = train_sample_size + valid_sample_size + eval_sample_size
-            dg = DataGenerator(n_confounder, n_cause, n_outcome, sample_size,
-                               p_confounder_cause, p_cause_cause,
-                               cause_noise, outcome_noise, linear=linear, confounding_level=d_config.confounding_level,
-                               real_data=d_config.real_data, train_frac=train_sample_size/sample_size, val_frac=valid_sample_size / sample_size,
-                               p_outcome_single=p_outcome_single, p_outcome_double=p_outcome_double, outcome_interaction=outcome_interaction)
+            dg = DataGenerator(
+                n_confounder,
+                n_cause,
+                n_outcome,
+                sample_size,
+                p_confounder_cause,
+                p_cause_cause,
+                cause_noise,
+                outcome_noise,
+                linear=linear,
+                confounding_level=d_config.confounding_level,
+                real_data=d_config.real_data,
+                train_frac=train_sample_size / sample_size,
+                val_frac=valid_sample_size / sample_size,
+                p_outcome_single=p_outcome_single,
+                p_outcome_double=p_outcome_double,
+                outcome_interaction=outcome_interaction,
+            )
     else:
         valid_sample_size = 200
         eval_sample_size = 4100
         train_sample_size = sample_size_train
         sample_size = train_sample_size + valid_sample_size + eval_sample_size
-        dg = DataGenerator(n_confounder, n_cause, n_outcome, sample_size,
-                           p_confounder_cause, p_cause_cause,
-                           cause_noise, outcome_noise, linear=linear, confounding_level=d_config.confounding_level,
-                           real_data=d_config.real_data, train_frac=train_sample_size / sample_size,
-                           val_frac=valid_sample_size / sample_size,
-                           p_outcome_single=p_outcome_single, p_outcome_double=p_outcome_double,
-                           outcome_interaction=outcome_interaction)
+        dg = DataGenerator(
+            n_confounder,
+            n_cause,
+            n_outcome,
+            sample_size,
+            p_confounder_cause,
+            p_cause_cause,
+            cause_noise,
+            outcome_noise,
+            linear=linear,
+            confounding_level=d_config.confounding_level,
+            real_data=d_config.real_data,
+            train_frac=train_sample_size / sample_size,
+            val_frac=valid_sample_size / sample_size,
+            p_outcome_single=p_outcome_single,
+            p_outcome_double=p_outcome_double,
+            outcome_interaction=outcome_interaction,
+        )
     if n_cause > 3:
         npc = 3
     else:
         npc = 1
     train_dataset, valid_dataset, x_test, y_test = dg.generate_dataset_bmc(npc=npc)
-    print('training with ', train_dataset.tensors[0].shape[0])
+    print("training with ", train_dataset.tensors[0].shape[0])
     print(x_test.shape)
     print(n_confounder)
     print(n_cause)
@@ -98,9 +137,11 @@ def run(d_config, eval_only=False, n_ensemble=0, eval_delta=False):
     err_list = list()
     param_list = get_scp_config(hyper_param_itr, n_confounder, p_confounder_cause)
     for param in param_list:
-        model_id_to_save = model_id + '_itr_{}'.format(param.itr)
+        model_id_to_save = model_id + "_itr_{}".format(param.itr)
 
-        model = DirectOutcomeRegression(n_confounder + npc, n_cause, n_outcome, n_hidden=param.n_outcome_rep + param.n_confounder_rep)
+        model = DirectOutcomeRegression(
+            n_confounder + npc, n_cause, n_outcome, n_hidden=param.n_outcome_rep + param.n_confounder_rep
+        )
         optimizer = torch.optim.SGD(model.parameters(), lr=param.learning_rate)
 
         trainer = ModelTrainer(param.batch_size, max_epoch, rmse, model_id_to_save, model_path)
@@ -120,13 +161,14 @@ def run(d_config, eval_only=False, n_ensemble=0, eval_delta=False):
     # select model with best hyper-parameter
     best_index = int(np.argmin(np.array(err_list)))
     best_param = param_list[best_index]
-    print('Best param:', best_param)
-    model_id_to_load = model_id + '_itr_{}'.format(best_param.itr)
-    model = DirectOutcomeRegression(n_confounder + npc, n_cause, n_outcome,
-                                    n_hidden=best_param.n_outcome_rep + best_param.n_confounder_rep)
+    print("Best param:", best_param)
+    model_id_to_load = model_id + "_itr_{}".format(best_param.itr)
+    model = DirectOutcomeRegression(
+        n_confounder + npc, n_cause, n_outcome, n_hidden=best_param.n_outcome_rep + best_param.n_confounder_rep
+    )
     # load best iteration
     _, model_file = load_model(model, model_path, model_id_to_load)
-    torch.save(model, model_path + 'best.pth')
+    torch.save(model, model_path + "best.pth")
 
     if eval_delta:
         for j in range(n_cause):
@@ -138,7 +180,7 @@ def run(d_config, eval_only=False, n_ensemble=0, eval_delta=False):
                 cate_hat = y_hat1 - y_hat0
                 error = torch.sqrt(rmse(cate_hat, cate_test))
                 rmse_sd = bootstrap_RMSE((cate_hat - cate_test) ** 2)
-                print('bmc', n_flip, round(error.item(), 3), round(rmse_sd, 3))
+                print("bmc", n_flip, round(error.item(), 3), round(rmse_sd, 3))
         return 0
 
     with torch.no_grad():
@@ -174,15 +216,14 @@ def run(d_config, eval_only=False, n_ensemble=0, eval_delta=False):
         dg.evaluate_real(y_list)
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     # config1 = sim_config.sim_dict['n_confounder_10_linear']
     # config1 = sim_config.sim_dict['real_3000']
     # run(config1, eval_only=True)
 
-    parser = argparse.ArgumentParser('Ablation')
-    parser.add_argument('--ablation', type=str, default='None')
-    parser.add_argument('--config', type=str)
+    parser = argparse.ArgumentParser("Ablation")
+    parser.add_argument("--ablation", type=str, default="None")
+    parser.add_argument("--config", type=str)
 
     args = parser.parse_args()
 
@@ -195,4 +236,3 @@ if __name__ == '__main__':
         exit(-1)
 
     run(config1, eval_only=False, n_ensemble=0)
-

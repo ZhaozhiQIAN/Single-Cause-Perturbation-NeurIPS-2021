@@ -1,7 +1,8 @@
 import torch.nn as nn
-from ignite.engine import Events, create_supervised_trainer, create_supervised_evaluator
+from ignite.engine import Events, create_supervised_evaluator, create_supervised_trainer
+from ignite.handlers import Checkpoint, DiskSaver, EarlyStopping
 from ignite.metrics import Loss
-from ignite.handlers import EarlyStopping, DiskSaver, Checkpoint
+
 from global_config import *
 
 
@@ -13,14 +14,10 @@ class DirectOutcomeRegression(nn.Module):
         self.weighted = weighted
 
         if linear:
-            self.mlp = nn.Sequential(
-                nn.Linear(n_confounder + n_cause, n_outcome, bias=False),
-            ).to(device)
+            self.mlp = nn.Sequential(nn.Linear(n_confounder + n_cause, n_outcome, bias=False),).to(device)
         else:
             self.mlp = nn.Sequential(
-                nn.Linear(n_confounder + n_cause, n_hidden),
-                nn.ReLU(),
-                nn.Linear(n_hidden, n_outcome)
+                nn.Linear(n_confounder + n_cause, n_hidden), nn.ReLU(), nn.Linear(n_hidden, n_outcome)
             ).to(device)
 
         self.device = device
@@ -50,9 +47,22 @@ class DirectOutcomeRegression(nn.Module):
 
 
 class NN_SCP(nn.Module):
-    def __init__(self, single_cause_index, n_confounder, n_cause, n_outcome,
-                 n_confounder_rep, n_outcome_rep, mmd_sigma,
-                 lam_factual, lam_propensity, lam_mmd, linear=False, binary_outcome=False, device=DEVICE):
+    def __init__(
+        self,
+        single_cause_index,
+        n_confounder,
+        n_cause,
+        n_outcome,
+        n_confounder_rep,
+        n_outcome_rep,
+        mmd_sigma,
+        lam_factual,
+        lam_propensity,
+        lam_mmd,
+        linear=False,
+        binary_outcome=False,
+        device=DEVICE,
+    ):
         super().__init__()
         self.single_cause_index = single_cause_index
         self.n_confounder = n_confounder
@@ -73,7 +83,7 @@ class NN_SCP(nn.Module):
             self.outcome_net0 = nn.Sequential(
                 nn.Linear(n_input, n_confounder_rep + n_outcome_rep + 1),
                 nn.ReLU(),
-                nn.Linear(n_confounder_rep + n_outcome_rep + 1, n_outcome)
+                nn.Linear(n_confounder_rep + n_outcome_rep + 1, n_outcome),
             ).to(device)
 
         else:
@@ -82,7 +92,7 @@ class NN_SCP(nn.Module):
                 nn.Linear(n_input, n_confounder_rep + n_outcome_rep + 1),
                 nn.ReLU(),
                 nn.Linear(n_confounder_rep + n_outcome_rep + 1, n_outcome),
-                nn.Sigmoid()
+                nn.Sigmoid(),
             ).to(device)
 
     def forward(self, x):
@@ -102,7 +112,7 @@ class NN_SCP(nn.Module):
             # print('y', y.shape)
             error = torch.sqrt(rmse(y_hat, y))
         else:
-            neg_y_hat = 1. - y_hat
+            neg_y_hat = 1.0 - y_hat
             # N, 2, D_out
             y_hat_2d = torch.cat([y_hat[:, None, :], neg_y_hat[:, None, :]], dim=1)
             y_hat_2d = torch.log(y_hat_2d + 1e-9)
@@ -121,7 +131,7 @@ class NN_SCP(nn.Module):
 
 
 class ModelTrainer:
-    def __init__(self, batch_size, max_epoch, loss_fn, model_id, model_path='model/'):
+    def __init__(self, batch_size, max_epoch, loss_fn, model_id, model_path="model/"):
         self.batch_size = batch_size
         self.loss_fn = loss_fn
         self.model_id = model_id
@@ -136,15 +146,12 @@ class ModelTrainer:
         model.train()
         optimizer.zero_grad()
         trainer = create_supervised_trainer(model, optimizer, self.loss_fn)
-        evaluator = create_supervised_evaluator(model,
-                                                metrics={
-                                                    'loss': Loss(self.loss_fn)
-                                                })
+        evaluator = create_supervised_evaluator(model, metrics={"loss": Loss(self.loss_fn)})
 
         # early stopping
         def score_function(engine):
-          val_loss = engine.state.metrics['loss']
-          return -val_loss
+            val_loss = engine.state.metrics["loss"]
+            return -val_loss
 
         early_stopping_handler = EarlyStopping(patience=10, score_function=score_function, trainer=trainer)
         evaluator.add_event_handler(Events.COMPLETED, early_stopping_handler)
@@ -152,15 +159,22 @@ class ModelTrainer:
         # evaluation loss
         @trainer.on(Events.EPOCH_COMPLETED)
         def log_validation_results(trainer):
-          evaluator.run(val_loader)
-          metrics = evaluator.state.metrics
-          if trainer.state.epoch % print_every == 0:
-              print("Validation Results - Epoch[{}] Avg loss: {:.3f}"
-                    .format(trainer.state.epoch, metrics['loss']))
+            evaluator.run(val_loader)
+            metrics = evaluator.state.metrics
+            if trainer.state.epoch % print_every == 0:
+                print("Validation Results - Epoch[{}] Avg loss: {:.3f}".format(trainer.state.epoch, metrics["loss"]))
 
         # save best model
-        save_best_model_by_val_score(self.model_path, evaluator, model, 'loss', n_saved=1,
-                                     score_fun=score_function, tag="val", model_id=self.model_id)
+        save_best_model_by_val_score(
+            self.model_path,
+            evaluator,
+            model,
+            "loss",
+            n_saved=1,
+            score_fun=score_function,
+            tag="val",
+            model_id=self.model_id,
+        )
 
         trainer.run(train_loader, max_epochs=self.max_epoch)
 
@@ -168,7 +182,7 @@ class ModelTrainer:
 
 
 def gen_save_best_models_by_val_score(
-    save_handler, evaluator, models, metric_name, n_saved=3, score_fun=None, tag="val", model_id='best', **kwargs
+    save_handler, evaluator, models, metric_name, n_saved=3, score_fun=None, tag="val", model_id="best", **kwargs
 ):
     """Method adds a handler to ``evaluator`` to save ``n_saved`` of best models based on the metric
     (named by ``metric_name``) provided by ``evaluator`` (i.e. ``evaluator.state.metrics[metric_name]``).
@@ -217,8 +231,9 @@ def gen_save_best_models_by_val_score(
 
     return best_model_handler
 
+
 def save_best_model_by_val_score(
-    output_path, evaluator, model, metric_name, n_saved=3, score_fun=None, tag="val", model_id='best', **kwargs
+    output_path, evaluator, model, metric_name, n_saved=3, score_fun=None, tag="val", model_id="best", **kwargs
 ):
     """Method adds a handler to ``evaluator`` to save on a disk ``n_saved`` of best models based on the metric
     (named by ``metric_name``) provided by ``evaluator`` (i.e. ``evaluator.state.metrics[metric_name]``).

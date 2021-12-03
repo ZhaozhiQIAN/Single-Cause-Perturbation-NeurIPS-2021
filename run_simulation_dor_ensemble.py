@@ -1,10 +1,12 @@
-import torch.nn as nn
-import sim_config
-from sim_data_gen import DataGenerator
-from mlp import DirectOutcomeRegression, ModelTrainer
-from utils import *
-import shutil
 import argparse
+import shutil
+
+import torch.nn as nn
+
+import sim_config
+from mlp import DirectOutcomeRegression, ModelTrainer
+from sim_data_gen import DataGenerator
+from utils import *
 
 
 def run(d_config, eval_only=False, n_ensemble=None):
@@ -24,8 +26,8 @@ def run(d_config, eval_only=False, n_ensemble=None):
 
     batch_size = 100
     max_epoch = 100
-    model_id = 'DOR-ens'
-    model_path = 'model/{}_{}_model/'.format(model_id, d_config.sim_id)
+    model_id = "DOR-ens"
+    model_path = "model/{}_{}_model/".format(model_id, d_config.sim_id)
     if not eval_only:
         try:
             shutil.rmtree(model_path)
@@ -44,11 +46,24 @@ def run(d_config, eval_only=False, n_ensemble=None):
 
     train_ratio = sample_size / 1000
 
-    dg = DataGenerator(n_confounder, n_cause, n_outcome, sample_size,
-                       p_confounder_cause, p_cause_cause,
-                       cause_noise, outcome_noise, linear=linear, confounding_level=d_config.confounding_level,
-                       real_data=d_config.real_data, train_frac=0.7/train_ratio, val_frac=0.1/train_ratio,
-                       p_outcome_single=p_outcome_single, p_outcome_double=p_outcome_double, outcome_interaction=outcome_interaction)
+    dg = DataGenerator(
+        n_confounder,
+        n_cause,
+        n_outcome,
+        sample_size,
+        p_confounder_cause,
+        p_cause_cause,
+        cause_noise,
+        outcome_noise,
+        linear=linear,
+        confounding_level=d_config.confounding_level,
+        real_data=d_config.real_data,
+        train_frac=0.7 / train_ratio,
+        val_frac=0.1 / train_ratio,
+        p_outcome_single=p_outcome_single,
+        p_outcome_double=p_outcome_double,
+        outcome_interaction=outcome_interaction,
+    )
 
     train_dataset, valid_dataset, x_test, y_test = dg.generate_dataset()
 
@@ -63,11 +78,12 @@ def run(d_config, eval_only=False, n_ensemble=None):
     y_hat_list = []
     cate_hat_list = []
     for param in param_list:
-        model_id_to_save = model_id + '_itr_{}'.format(param.itr)
+        model_id_to_save = model_id + "_itr_{}".format(param.itr)
 
         # model = DirectOutcomeRegression(n_confounder, n_cause, n_outcome, n_hidden=param.n_outcome_rep + param.n_confounder_rep)
-        model = DirectOutcomeRegression(n_confounder, n_cause, n_outcome, n_hidden=n_confounder + n_cause + 1,
-                                        linear=False)
+        model = DirectOutcomeRegression(
+            n_confounder, n_cause, n_outcome, n_hidden=n_confounder + n_cause + 1, linear=False
+        )
 
         optimizer = torch.optim.SGD(model.parameters(), lr=0.005)
 
@@ -102,8 +118,8 @@ def run(d_config, eval_only=False, n_ensemble=None):
             rmse_sd = bootstrap_RMSE((cate_hat - cate_test) ** 2)
 
             y_mat_true = np.concatenate(dg.outcome_list, axis=-1)
-            print('y_mat_true', y_mat_true.shape)
-            print('y_mat', y_mat.shape)
+            print("y_mat_true", y_mat_true.shape)
+            print("y_mat", y_mat.shape)
             # N, 2^K
             n_test = y_mat.shape[0]
             err_all = np.sum((y_mat_true[-n_test:, :] - y_mat) ** 2, axis=1)
@@ -113,21 +129,20 @@ def run(d_config, eval_only=False, n_ensemble=None):
     else:
         y_list = []
         for i in range(y_mat.shape[1]):
-            y_list.append(y_mat[:, i+i+1])
+            y_list.append(y_mat[:, i + i + 1])
         dg.evaluate_real(y_list)
 
 
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser('Ablation')
-    parser.add_argument('--ablation', type=str, default='None')
-    parser.add_argument('--config', type=str)
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser("Ablation")
+    parser.add_argument("--ablation", type=str, default="None")
+    parser.add_argument("--config", type=str)
 
     args = parser.parse_args()
 
-    i = args.ablation.find('perturb_subset')
+    i = args.ablation.find("perturb_subset")
     if i >= 0:
-        subset = int(args.ablation.split('-')[-1])
+        subset = int(args.ablation.split("-")[-1])
         ablation = args.ablation[:i]
 
     config_key = args.config
@@ -139,7 +154,6 @@ if __name__ == '__main__':
         exit(-1)
 
     run(config1, eval_only=False, n_ensemble=subset)
-
 
     # config1 = sim_config.sim_dict['n_confounder_10_linear']
     # config1 = sim_config.sim_dict['real_3000']

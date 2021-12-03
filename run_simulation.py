@@ -1,49 +1,49 @@
 import argparse
-import sim_config
+
+import run_simulation_bmc
 import run_simulation_dor
-import run_simulation_propensity
-import run_simulation_tarnet
-import run_simulation_vsr
-import run_simulation_scp
 import run_simulation_drcrn
 import run_simulation_overlap
-import run_simulation_bmc
+import run_simulation_propensity
+import run_simulation_scp
 import run_simulation_scp_nn
+import run_simulation_tarnet
+import run_simulation_vsr
+import sim_config
 
-parser = argparse.ArgumentParser('PKPD simulation')
-parser.add_argument('--method', type=str)
-parser.add_argument('--config', type=str)
-parser.add_argument('--eval_only', choices=['True', 'False'], default='False', type=str)
-parser.add_argument('--eval_delta', choices=['True', 'False'], default='False', type=str)
+parser = argparse.ArgumentParser("PKPD simulation")
+parser.add_argument("--method", type=str)
+parser.add_argument("--config", type=str)
+parser.add_argument("--eval_only", choices=["True", "False"], default="False", type=str)
+parser.add_argument("--eval_delta", choices=["True", "False"], default="False", type=str)
 
 args = parser.parse_args()
 method = args.method
 config_key = args.config
-eval_only = args.eval_only == 'True'
-eval_delta = args.eval_delta == 'True'
+eval_only = args.eval_only == "True"
+eval_delta = args.eval_delta == "True"
 
 try:
     config = sim_config.sim_dict[config_key]
 except Exception:
-    print('Config {} is not found.'.format(config_key))
+    print("Config {} is not found.".format(config_key))
     exit(-1)
 
-if method == 'scp':
+if method == "scp":
     run_simulation_scp.run(config, eval_only=eval_only, eval_delta=eval_delta)
-elif method == 'dor':
+elif method == "dor":
     run_simulation_dor.run(config, eval_only=eval_only, eval_delta=eval_delta)
-elif method == 'propensity':
+elif method == "propensity":
     run_simulation_propensity.run(config, eval_only=eval_only, eval_delta=eval_delta)
-elif method == 'tarnet':
+elif method == "tarnet":
     run_simulation_tarnet.run(config, eval_only=eval_only, eval_delta=eval_delta)
-elif method == 'vsr':
+elif method == "vsr":
     run_simulation_vsr.run(config, eval_only=eval_only, eval_delta=eval_delta)
-elif method == 'drcrn':
+elif method == "drcrn":
     run_simulation_drcrn.run(config, eval_only=eval_only, eval_delta=eval_delta)
-elif method == 'overlap':
+elif method == "overlap":
     run_simulation_overlap.run(config, eval_only=eval_only, eval_delta=eval_delta)
-elif method == 'bmc':
+elif method == "bmc":
     run_simulation_bmc.run(config, eval_only=eval_only, eval_delta=eval_delta)
-elif method == 'scp_nn':
+elif method == "scp_nn":
     run_simulation_scp_nn.run(config, eval_only=eval_only, eval_delta=eval_delta)
-

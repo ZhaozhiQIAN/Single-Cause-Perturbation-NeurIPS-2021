@@ -1,18 +1,18 @@
 import argparse
-
-import torch.nn as nn
-import sim_config
-from mlp import DirectOutcomeRegression, ModelTrainer
-from utils import *
 import shutil
 
+import torch.nn as nn
+
+import sim_config
 import sim_data_gen
+from mlp import DirectOutcomeRegression, ModelTrainer
+from utils import *
 
 
 def _add_noise_cause(k_cause, cause_mat, p):
     mask = np.random.binomial(1, p, cause_mat.shape)
     mask[:, :k_cause] = 0
-    new_cause = cause_mat * (1 - mask) + (1. - cause_mat) * mask
+    new_cause = cause_mat * (1 - mask) + (1.0 - cause_mat) * mask
     return new_cause
 
 
@@ -38,7 +38,7 @@ def add_noise_outcome(no_list, sigma):
     return new_no_list
 
 
-def run(d_config, p=0, sigma=0, eval_only=False, revert='n', full_balance=False):
+def run(d_config, p=0, sigma=0, eval_only=False, revert="n", full_balance=False):
 
     n_confounder = d_config.n_confounder
     n_cause = d_config.n_cause
@@ -59,8 +59,8 @@ def run(d_config, p=0, sigma=0, eval_only=False, revert='n', full_balance=False)
     param_list = get_scp_config(hyper_param_itr, n_confounder, p_confounder_cause)
 
     max_epoch = 500
-    model_id = 'EA-{:.2f}-{:.2f}'.format(p, sigma)
-    model_path = 'model/{}_{}_model/'.format(model_id, d_config.sim_id)
+    model_id = "EA-{:.2f}-{:.2f}".format(p, sigma)
+    model_path = "model/{}_{}_model/".format(model_id, d_config.sim_id)
     if not eval_only:
         try:
             shutil.rmtree(model_path)
@@ -72,11 +72,24 @@ def run(d_config, p=0, sigma=0, eval_only=False, revert='n', full_balance=False)
 
     train_ratio = sample_size / 1000
 
-    dg = sim_data_gen.DataGenerator(n_confounder, n_cause, n_outcome, sample_size,
-                                   p_confounder_cause, p_cause_cause,
-                                   cause_noise, outcome_noise, linear=linear, confounding_level=d_config.confounding_level,
-                                   real_data=d_config.real_data, train_frac=0.7/train_ratio, val_frac=0.1/train_ratio,
-                                   p_outcome_single=p_outcome_single, p_outcome_double=p_outcome_double, outcome_interaction=outcome_interaction)
+    dg = sim_data_gen.DataGenerator(
+        n_confounder,
+        n_cause,
+        n_outcome,
+        sample_size,
+        p_confounder_cause,
+        p_cause_cause,
+        cause_noise,
+        outcome_noise,
+        linear=linear,
+        confounding_level=d_config.confounding_level,
+        real_data=d_config.real_data,
+        train_frac=0.7 / train_ratio,
+        val_frac=0.1 / train_ratio,
+        p_outcome_single=p_outcome_single,
+        p_outcome_double=p_outcome_double,
+        outcome_interaction=outcome_interaction,
+    )
     confounder, cause, outcome = dg.generate()
 
     nc_list = []
@@ -98,7 +111,7 @@ def run(d_config, p=0, sigma=0, eval_only=False, revert='n', full_balance=False)
     no_list_noise.append(outcome)
 
     # B, D, N_CAUSE + 1
-    if revert == 'y':
+    if revert == "y":
         cause_cat = np.stack([cause] * (dg.n_cause + 1), axis=-1)
         outcome_cat = np.stack([outcome] * (dg.n_cause + 1), axis=-1)
         confounder_cat = np.stack([confounder] * (dg.n_cause + 1), axis=-1)
@@ -110,11 +123,11 @@ def run(d_config, p=0, sigma=0, eval_only=False, revert='n', full_balance=False)
     x_cat = np.concatenate([confounder_cat, cause_cat], axis=1)
 
     # get training and validation
-    x_train = reshape_arr(x_cat[:dg.train_size])
-    y_train = reshape_arr(outcome_cat[:dg.train_size])
+    x_train = reshape_arr(x_cat[: dg.train_size])
+    y_train = reshape_arr(outcome_cat[: dg.train_size])
 
-    x_val = reshape_arr(x_cat[dg.train_size:dg.train_size + dg.val_size])
-    y_val = reshape_arr(outcome_cat[dg.train_size:dg.train_size + dg.val_size])
+    x_val = reshape_arr(x_cat[dg.train_size : dg.train_size + dg.val_size])
+    y_val = reshape_arr(outcome_cat[dg.train_size : dg.train_size + dg.val_size])
 
     train_dataset = torch.utils.data.dataset.TensorDataset(dg._make_tensor(x_train), dg._make_tensor(y_train))
     valid_dataset = torch.utils.data.dataset.TensorDataset(dg._make_tensor(x_val), dg._make_tensor(y_val))
@@ -126,9 +139,11 @@ def run(d_config, p=0, sigma=0, eval_only=False, revert='n', full_balance=False)
 
     err_list = list()
     for param in param_list:
-        model_id_to_save = model_id + '_itr_{}'.format(param.itr)
+        model_id_to_save = model_id + "_itr_{}".format(param.itr)
 
-        model = DirectOutcomeRegression(n_confounder, n_cause, n_outcome, n_hidden=param.n_outcome_rep + param.n_confounder_rep)
+        model = DirectOutcomeRegression(
+            n_confounder, n_cause, n_outcome, n_hidden=param.n_outcome_rep + param.n_confounder_rep
+        )
         optimizer = torch.optim.SGD(model.parameters(), lr=param.learning_rate)
 
         trainer = ModelTrainer(param.batch_size, max_epoch, rmse, model_id_to_save, model_path)
@@ -148,13 +163,14 @@ def run(d_config, p=0, sigma=0, eval_only=False, revert='n', full_balance=False)
     # select model with best hyper-parameter
     best_index = int(np.argmin(np.array(err_list)))
     best_param = param_list[best_index]
-    print('Best param:', best_param)
-    model_id_to_load = model_id + '_itr_{}'.format(best_param.itr)
-    model = DirectOutcomeRegression(n_confounder, n_cause, n_outcome,
-                                    n_hidden=best_param.n_outcome_rep + best_param.n_confounder_rep)
+    print("Best param:", best_param)
+    model_id_to_load = model_id + "_itr_{}".format(best_param.itr)
+    model = DirectOutcomeRegression(
+        n_confounder, n_cause, n_outcome, n_hidden=best_param.n_outcome_rep + best_param.n_confounder_rep
+    )
     # load best iteration
     _, model_file = load_model(model, model_path, model_id_to_load)
-    torch.save(model, model_path + 'best.pth')
+    torch.save(model, model_path + "best.pth")
 
     # evaluate
 
@@ -183,23 +199,21 @@ def run(d_config, p=0, sigma=0, eval_only=False, revert='n', full_balance=False)
         print(0, 0, round(rmse_all, 3), round(rmse_all_sd, 3))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # config1 = sim_config.sim_dict['n_confounder_10_linear']
     # config1 = sim_config.sim_dict['real_3000']
     # run(config1, eval_only=True)
 
-    parser = argparse.ArgumentParser('EA')
-    parser.add_argument('--p', type=float, default=0)
-    parser.add_argument('--sigma', type=float, default=0)
-    parser.add_argument('--config', type=str)
-    parser.add_argument('--revert', type=str, default='n')
-    parser.add_argument('--fb', type=bool, default=False)
+    parser = argparse.ArgumentParser("EA")
+    parser.add_argument("--p", type=float, default=0)
+    parser.add_argument("--sigma", type=float, default=0)
+    parser.add_argument("--config", type=str)
+    parser.add_argument("--revert", type=str, default="n")
+    parser.add_argument("--fb", type=bool, default=False)
 
     args = parser.parse_args()
-
 
     config_key = args.config
     config1 = sim_config.sim_dict[config_key]
 
     run(config1, args.p, args.sigma, eval_only=False, revert=args.revert, full_balance=args.fb)
-

@@ -1,6 +1,7 @@
-from sim_data_gen import DataGeneratorConfig
 from typing import NamedTuple
+
 from global_config import *
+from sim_data_gen import DataGeneratorConfig
 
 #
 # ablation study
@@ -19,13 +20,13 @@ config = DataGeneratorConfig(
     outcome_noise=0.01,
     linear=True,
     n_flip=1,
-    sim_id='real_3000',
-    real_data=True
+    sim_id="real_3000",
+    real_data=True,
 )
-sim_dict['real_3000'] = config
+sim_dict["real_3000"] = config
 
 for sample_size in [500, 1000, 1500, 2000, 2500]:
-    idd = 'real_{}'.format(sample_size)
+    idd = "real_{}".format(sample_size)
     config = DataGeneratorConfig(
         n_confounder=17,
         n_cause=5,
@@ -38,15 +39,15 @@ for sample_size in [500, 1000, 1500, 2000, 2500]:
         linear=True,
         n_flip=1,
         sim_id=idd,
-        real_data=True
+        real_data=True,
     )
     sim_dict[idd] = config
 
 
 for linear in [True, False]:
-    lin_id = 'linear' if linear else 'nonlinear'
+    lin_id = "linear" if linear else "nonlinear"
     for sample_size_train in [400, 700, 1400, 2000]:
-        sim_id = 'sample_size_train_{}_{}'.format(sample_size_train, lin_id)
+        sim_id = "sample_size_train_{}_{}".format(sample_size_train, lin_id)
         config = DataGeneratorConfig(
             n_confounder=N_CONFOUNDER,
             n_cause=N_CAUSE,
@@ -61,12 +62,12 @@ for linear in [True, False]:
             n_flip=1,
             sim_id=sim_id,
             sample_size_train=sample_size_train,
-            outcome_interaction=OUTCOME_INTERACTION
+            outcome_interaction=OUTCOME_INTERACTION,
         )
         sim_dict[sim_id] = config
 
     for n_confounder in [10, 20, 30, 40]:
-        sim_id = 'n_confounder_{}_{}'.format(n_confounder, lin_id)
+        sim_id = "n_confounder_{}_{}".format(n_confounder, lin_id)
         config = DataGeneratorConfig(
             n_confounder=n_confounder,
             n_cause=N_CAUSE,
@@ -80,12 +81,12 @@ for linear in [True, False]:
             linear=linear,
             n_flip=1,
             sim_id=sim_id,
-            outcome_interaction=OUTCOME_INTERACTION
+            outcome_interaction=OUTCOME_INTERACTION,
         )
         sim_dict[sim_id] = config
 
-    for confounding_level in [1., 3., 5., 7.]:
-        sim_id = 'confounding_level_{}_{}'.format(confounding_level, lin_id)
+    for confounding_level in [1.0, 3.0, 5.0, 7.0]:
+        sim_id = "confounding_level_{}_{}".format(confounding_level, lin_id)
         config = DataGeneratorConfig(
             n_confounder=N_CONFOUNDER,
             n_cause=N_CAUSE,
@@ -99,12 +100,12 @@ for linear in [True, False]:
             n_flip=1,
             confounding_level=confounding_level,
             sim_id=sim_id,
-            outcome_interaction=OUTCOME_INTERACTION
+            outcome_interaction=OUTCOME_INTERACTION,
         )
         sim_dict[sim_id] = config
 
     for n_flip in [1, 2, 3, 5]:
-        sim_id = 'n_flip_{}_{}'.format(n_flip, lin_id)
+        sim_id = "n_flip_{}_{}".format(n_flip, lin_id)
         config = DataGeneratorConfig(
             n_confounder=N_CONFOUNDER,
             n_cause=N_CAUSE,
@@ -118,12 +119,12 @@ for linear in [True, False]:
             linear=linear,
             n_flip=n_flip,
             sim_id=sim_id,
-            outcome_interaction=OUTCOME_INTERACTION
+            outcome_interaction=OUTCOME_INTERACTION,
         )
         sim_dict[sim_id] = config
 
     for p_confounder_cause in [0.1, 0.3, 0.5, 0.8]:
-        sim_id = 'p_confounder_cause_{}_{}'.format(p_confounder_cause, lin_id)
+        sim_id = "p_confounder_cause_{}_{}".format(p_confounder_cause, lin_id)
         config = DataGeneratorConfig(
             n_confounder=N_CONFOUNDER,
             n_cause=N_CAUSE,
@@ -136,12 +137,12 @@ for linear in [True, False]:
             outcome_noise=OUTCOME_NOISE,
             linear=linear,
             sim_id=sim_id,
-            outcome_interaction=OUTCOME_INTERACTION
+            outcome_interaction=OUTCOME_INTERACTION,
         )
         sim_dict[sim_id] = config
 
     for p_cause_cause in [0.1, 0.3, 0.5, 0.8]:
-        sim_id = 'p_cause_cause_{}_{}'.format(p_cause_cause, lin_id)
+        sim_id = "p_cause_cause_{}_{}".format(p_cause_cause, lin_id)
         config = DataGeneratorConfig(
             n_confounder=N_CONFOUNDER,
             n_cause=N_CAUSE,
@@ -155,12 +156,12 @@ for linear in [True, False]:
             linear=linear,
             sim_id=sim_id,
             n_flip=1,
-            outcome_interaction=OUTCOME_INTERACTION
+            outcome_interaction=OUTCOME_INTERACTION,
         )
         sim_dict[sim_id] = config
-        
+
     for p_outcome_single in [0.1, 0.3, 0.5, 0.8]:
-        sim_id = 'p_outcome_single_{}_{}'.format(p_outcome_single, lin_id)
+        sim_id = "p_outcome_single_{}_{}".format(p_outcome_single, lin_id)
         config = DataGeneratorConfig(
             n_confounder=N_CONFOUNDER,
             n_cause=N_CAUSE,
@@ -176,12 +177,12 @@ for linear in [True, False]:
             linear=linear,
             sim_id=sim_id,
             n_flip=1,
-            outcome_interaction=OUTCOME_INTERACTION
+            outcome_interaction=OUTCOME_INTERACTION,
         )
         sim_dict[sim_id] = config
 
     for cause_noise in [0.01, 0.3, 0.5, 0.8]:
-        sim_id = 'cause_noise_{}_{}'.format(cause_noise, lin_id)
+        sim_id = "cause_noise_{}_{}".format(cause_noise, lin_id)
         config = DataGeneratorConfig(
             n_confounder=N_CONFOUNDER,
             n_cause=N_CAUSE,
@@ -197,12 +198,12 @@ for linear in [True, False]:
             linear=linear,
             sim_id=sim_id,
             n_flip=1,
-            outcome_interaction=OUTCOME_INTERACTION
+            outcome_interaction=OUTCOME_INTERACTION,
         )
         sim_dict[sim_id] = config
 
     for p_outcome_double in [0.05, 0.1, 0.15, 0.2]:
-        sim_id = 'p_outcome_double_{}_{}'.format(p_outcome_double, lin_id)
+        sim_id = "p_outcome_double_{}_{}".format(p_outcome_double, lin_id)
         config = DataGeneratorConfig(
             n_confounder=N_CONFOUNDER,
             n_cause=N_CAUSE,
@@ -218,12 +219,12 @@ for linear in [True, False]:
             linear=linear,
             sim_id=sim_id,
             n_flip=1,
-            outcome_interaction=OUTCOME_INTERACTION
+            outcome_interaction=OUTCOME_INTERACTION,
         )
         sim_dict[sim_id] = config
-    
+
     for n_cause in [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]:
-        sim_id = 'n_cause_{}_{}'.format(n_cause, lin_id)
+        sim_id = "n_cause_{}_{}".format(n_cause, lin_id)
         config = DataGeneratorConfig(
             n_confounder=N_CONFOUNDER,
             n_cause=n_cause,
@@ -236,32 +237,32 @@ for linear in [True, False]:
             outcome_noise=OUTCOME_NOISE,
             linear=linear,
             sim_id=sim_id,
-            outcome_interaction=OUTCOME_INTERACTION
+            outcome_interaction=OUTCOME_INTERACTION,
         )
         sim_dict[sim_id] = config
 
     for n_cause in [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]:
-        sim_id = 'nc_n_cause_{}_{}'.format(n_cause, lin_id)
+        sim_id = "nc_n_cause_{}_{}".format(n_cause, lin_id)
         config = DataGeneratorConfig(
             n_confounder=2,
             n_cause=n_cause,
             n_outcome=1,
             confounding_level=CONFOUNDING_LEVEL,
             sample_size=SAMPLE_SIZE,
-            p_confounder_cause=0.,
-            p_cause_cause=0.,
+            p_confounder_cause=0.0,
+            p_cause_cause=0.0,
             cause_noise=CAUSE_NOISE,
             outcome_noise=OUTCOME_NOISE,
             linear=linear,
             sim_id=sim_id,
             outcome_interaction=OUTCOME_INTERACTION,
-            p_outcome_single=1.,
-            p_outcome_double=1.
+            p_outcome_single=1.0,
+            p_outcome_double=1.0,
         )
         sim_dict[sim_id] = config
 
     for n_cause in [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]:
-        sim_id = 'ndlm_n_cause_{}_{}'.format(n_cause, lin_id)
+        sim_id = "ndlm_n_cause_{}_{}".format(n_cause, lin_id)
         config = DataGeneratorConfig(
             n_confounder=N_CONFOUNDER,
             n_cause=n_cause,
@@ -269,19 +270,19 @@ for linear in [True, False]:
             confounding_level=10,
             sample_size=SAMPLE_SIZE,
             p_confounder_cause=0.5,
-            p_cause_cause=0.,
-            cause_noise=0.,
+            p_cause_cause=0.0,
+            cause_noise=0.0,
             outcome_noise=0.1,
             linear=linear,
             sim_id=sim_id,
             outcome_interaction=OUTCOME_INTERACTION,
             p_outcome_single=0.2,
-            p_outcome_double=0.001
+            p_outcome_double=0.001,
         )
         sim_dict[sim_id] = config
 
     for n_cause in [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]:
-        sim_id = 'ldlm_n_cause_{}_{}'.format(n_cause, lin_id)
+        sim_id = "ldlm_n_cause_{}_{}".format(n_cause, lin_id)
         config = DataGeneratorConfig(
             n_confounder=N_CONFOUNDER,
             n_cause=n_cause,
@@ -289,19 +290,19 @@ for linear in [True, False]:
             confounding_level=CONFOUNDING_LEVEL,
             sample_size=SAMPLE_SIZE,
             p_confounder_cause=0.5,
-            p_cause_cause=0.,
-            cause_noise=0.,
+            p_cause_cause=0.0,
+            cause_noise=0.0,
             outcome_noise=0.1,
             linear=linear,
             sim_id=sim_id,
             outcome_interaction=OUTCOME_INTERACTION,
-            p_outcome_single=1.,
-            p_outcome_double=0.
+            p_outcome_single=1.0,
+            p_outcome_double=0.0,
         )
         sim_dict[sim_id] = config
 
         for n_cause in [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]:
-            sim_id = 'o3_n_cause_{}_{}'.format(n_cause, lin_id)
+            sim_id = "o3_n_cause_{}_{}".format(n_cause, lin_id)
             config = DataGeneratorConfig(
                 n_confounder=5,
                 n_cause=n_cause,
@@ -315,33 +316,33 @@ for linear in [True, False]:
                 linear=linear,
                 sim_id=sim_id,
                 outcome_interaction=OUTCOME_INTERACTION,
-                p_outcome_single=1.,
-                p_outcome_double=1.
+                p_outcome_single=1.0,
+                p_outcome_double=1.0,
             )
             sim_dict[sim_id] = config
 
         for n_cause in [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]:
-            sim_id = 'dn_n_cause_{}_{}'.format(n_cause, lin_id)
+            sim_id = "dn_n_cause_{}_{}".format(n_cause, lin_id)
             config = DataGeneratorConfig(
                 n_confounder=5,
                 n_cause=n_cause,
                 n_outcome=1,
                 confounding_level=CONFOUNDING_LEVEL,
                 sample_size=SAMPLE_SIZE,
-                p_confounder_cause=1.,
-                p_cause_cause=1.,
+                p_confounder_cause=1.0,
+                p_cause_cause=1.0,
                 cause_noise=CAUSE_NOISE,
                 outcome_noise=0.1,
                 linear=linear,
                 sim_id=sim_id,
                 outcome_interaction=OUTCOME_INTERACTION,
-                p_outcome_single=1.,
-                p_outcome_double=1.
+                p_outcome_single=1.0,
+                p_outcome_double=1.0,
             )
             sim_dict[sim_id] = config
 
 for n_flip in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
-    sim_id = 'abl_n_flip_{}'.format(n_flip)
+    sim_id = "abl_n_flip_{}".format(n_flip)
     config = DataGeneratorConfig(
         n_confounder=N_CONFOUNDER,
         n_cause=10,
@@ -349,17 +350,17 @@ for n_flip in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
         sample_size=5000,
         p_confounder_cause=0.3,
         p_cause_cause=0.9,
-        cause_noise=0.,
+        cause_noise=0.0,
         outcome_noise=0.01,
         n_flip=n_flip,
-        confounding_level=1.,
+        confounding_level=1.0,
         linear=True,
-        sim_id=sim_id
+        sim_id=sim_id,
     )
     sim_dict[sim_id] = config
 
 for n_flip in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
-    sim_id = 'abl_n_flip_new_{}'.format(n_flip)
+    sim_id = "abl_n_flip_new_{}".format(n_flip)
     config = DataGeneratorConfig(
         n_confounder=N_CONFOUNDER,
         n_cause=10,
@@ -381,7 +382,7 @@ for n_flip in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
 
 
 for p_cause_cause in [0.1, 0.3, 0.5, 0.8]:
-    sim_id = 'abl_p_cause_cause_{}'.format(p_cause_cause)
+    sim_id = "abl_p_cause_cause_{}".format(p_cause_cause)
     config = DataGeneratorConfig(
         n_confounder=N_CONFOUNDER,
         n_cause=5,
@@ -392,32 +393,32 @@ for p_cause_cause in [0.1, 0.3, 0.5, 0.8]:
         cause_noise=0.01,
         outcome_noise=0.01,
         linear=True,
-        confounding_level=1.,
+        confounding_level=1.0,
         sim_id=sim_id,
-        n_flip=2
+        n_flip=2,
     )
     sim_dict[sim_id] = config
 
 
 for p_confounder_cause in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
-    sim_id = 'abl_p_confounder_cause_{}'.format(p_confounder_cause)
+    sim_id = "abl_p_confounder_cause_{}".format(p_confounder_cause)
     config = DataGeneratorConfig(
         n_confounder=N_CONFOUNDER,
         n_cause=10,
         n_outcome=1,
         sample_size=5000,
         p_confounder_cause=p_confounder_cause,
-        p_cause_cause=0.,
-        cause_noise=0.,
+        p_cause_cause=0.0,
+        cause_noise=0.0,
         outcome_noise=0.01,
         linear=True,
-        confounding_level=1.,
+        confounding_level=1.0,
         sim_id=sim_id,
-        n_flip=1
+        n_flip=1,
     )
     sim_dict[sim_id] = config
 
-sim_id = 'ea_{}_{}'.format(5, 'linear')
+sim_id = "ea_{}_{}".format(5, "linear")
 config = DataGeneratorConfig(
     n_confounder=N_CONFOUNDER,
     n_cause=5,
@@ -431,12 +432,12 @@ config = DataGeneratorConfig(
     linear=True,
     sim_id=sim_id,
     outcome_interaction=OUTCOME_INTERACTION,
-    n_flip=1
+    n_flip=1,
 )
 sim_dict[sim_id] = config
 
-for confounding_level in [2,4,6,8,10]:
-    sim_id = 'ea_balance_{}'.format(confounding_level)
+for confounding_level in [2, 4, 6, 8, 10]:
+    sim_id = "ea_balance_{}".format(confounding_level)
     config = DataGeneratorConfig(
         n_confounder=5,
         n_cause=5,
@@ -450,14 +451,13 @@ for confounding_level in [2,4,6,8,10]:
         linear=True,
         sim_id=sim_id,
         outcome_interaction=OUTCOME_INTERACTION,
-        n_flip=1
+        n_flip=1,
     )
     sim_dict[sim_id] = config
 
 
-
 for flip in range(0, 6):
-    sim_id = 'ea_{}_{}_{}'.format(5, 'linear', flip)
+    sim_id = "ea_{}_{}_{}".format(5, "linear", flip)
     config = DataGeneratorConfig(
         n_confounder=N_CONFOUNDER,
         n_cause=5,
@@ -471,7 +471,7 @@ for flip in range(0, 6):
         linear=True,
         sim_id=sim_id,
         outcome_interaction=OUTCOME_INTERACTION,
-        n_flip=flip
+        n_flip=flip,
     )
     sim_dict[sim_id] = config
 
@@ -505,6 +505,7 @@ for flip in range(0, 6):
 #     outcome_noise=OUTCOME_NOISE,
 #     linear=True
 # )
+
 
 class AblationConfig(NamedTuple):
     perturb_subset: int = 10000
