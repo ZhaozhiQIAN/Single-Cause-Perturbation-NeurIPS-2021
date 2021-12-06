@@ -1,12 +1,21 @@
 import argparse
 import shutil
 
+import numpy as np
+import torch
 import torch.nn as nn
 
 import sim_config
 from mlp import DirectOutcomeRegression, ModelTrainer
 from sim_data_gen import DataGenerator
-from utils import *
+from utils import (
+    NN_SCP,
+    bootstrap_RMSE,
+    create_NN_SCP,
+    get_scp_config,
+    get_scp_config_one,
+    load_model,
+)
 
 
 def get_scp_data(dataset, single_cause_index, model, data_gen=None, oracle=False, is_train=None):
@@ -36,7 +45,7 @@ def get_scp_data(dataset, single_cause_index, model, data_gen=None, oracle=False
         else:
             y_train = y_train_total[data_gen.train_size : data_gen.train_size + data_gen.val_size, :]
 
-        y_train = torch.tensor(y_train).to(x_train)
+        y_train = torch.tensor(y_train).to(x_train)  # pylint: disable=not-callable
     return x_train, y_train
 
 
@@ -50,7 +59,7 @@ def get_scp_data_potential_cause(x_train, model, data_gen=None, oracle=False):
         x_train1 = x_train.cpu().numpy()
         causes = x_train1[:, data_gen.n_confounder :]
         y_train = data_gen.generate_counterfactual(causes)
-        y_train = torch.tensor(y_train).to(x_train)
+        y_train = torch.tensor(y_train).to(x_train)  # pylint: disable=not-callable
     return y_train
 
 
@@ -93,7 +102,7 @@ def run(
         try:
             shutil.rmtree(model_path)
         except OSError as e:
-            print("Error: %s - %s." % (e.filename, e.strerror))
+            print("shutil note: %s - %s." % (e.filename, e.strerror))
 
     if seed is None:
         seed = 100
@@ -288,8 +297,8 @@ def run(
                     # 4. split data
                     train_dataset_new, valid_dataset_new, _, _ = dg.split_xy(x_single_cause_po, y_single_cause_po)
 
-                    x_train_scp, y_train_scp = train_dataset_new.tensors
-                    x_valid_scp, y_valid_scp = valid_dataset_new.tensors
+                    x_train_scp, y_train_scp = train_dataset_new.tensors  # pylint: disable=unbalanced-tuple-unpacking
+                    x_valid_scp, y_valid_scp = valid_dataset_new.tensors  # pylint: disable=unbalanced-tuple-unpacking
 
             else:
                 # generate augmented dataset
@@ -371,7 +380,7 @@ def run(
             n_test = y_mat.shape[0]
             err_all = np.sum((y_mat_true[-n_test:, :] - y_mat) ** 2, axis=1)
             rmse_all = np.sqrt(np.mean(err_all))
-            rmse_all_sd = bootstrap_RMSE(torch.tensor(err_all))
+            rmse_all_sd = bootstrap_RMSE(torch.tensor(err_all))  # pylint: disable=not-callable
 
             print(round(error.item(), 3), round(rmse_sd, 3), round(rmse_all, 3), round(rmse_all_sd, 3))
     else:

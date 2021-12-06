@@ -1,12 +1,14 @@
 import shutil
 
+import numpy as np
+import torch
 import torch.nn as nn
 
 import sim_config
 from mlp import DirectOutcomeRegression, ModelTrainer
 from propensity import DensityRatioNetwork, TreatmentVAE
 from sim_data_gen import DataGenerator
-from utils import *
+from utils import bootstrap_RMSE, get_scp_config, load_model
 
 
 def run(d_config, eval_only=False, eval_delta=False):
@@ -33,7 +35,7 @@ def run(d_config, eval_only=False, eval_delta=False):
         try:
             shutil.rmtree(model_path)
         except OSError as e:
-            print("Error: %s - %s." % (e.filename, e.strerror))
+            print("shutil note: %s - %s." % (e.filename, e.strerror))
 
     learning_rate = 0.01
     seed = 100
@@ -106,7 +108,7 @@ def run(d_config, eval_only=False, eval_delta=False):
         trainer.train(treatment_vae, optimizer, train_dataset_p, valid_dataset_p, print_every=10)
 
         with torch.no_grad():
-            x, _ = dg.generate_dataset_vae(return_dataset=False)
+            x, _ = dg.generate_dataset_vae(return_dataset=False)  # pylint: disable=unbalanced-tuple-unpacking
             z = treatment_vae.sample_z(x)
             z_rand = torch.randn_like(z)
 
@@ -122,7 +124,9 @@ def run(d_config, eval_only=False, eval_delta=False):
         trainer.train(dr_network, optimizer, train_dataset_d, valid_dataset_d, print_every=10)
 
         with torch.no_grad():
-            x, y = dg.generate_dataset_dr(z, z_rand, return_dataset=False, shuffle=False)
+            x, y = dg.generate_dataset_dr(  # pylint: disable=unbalanced-tuple-unpacking
+                z, z_rand, return_dataset=False, shuffle=False
+            )
             log_prob = dr_network(x)[:, 0] - dr_network(x)[:, 1]
             log_prob = log_prob[: (log_prob.shape[0] // 2)]
             log_prob = log_prob - torch.mean(log_prob)
@@ -209,7 +213,7 @@ def run(d_config, eval_only=False, eval_delta=False):
             n_test = y_mat.shape[0]
             err_all = np.sum((y_mat_true[-n_test:, :] - y_mat) ** 2, axis=1)
             rmse_all = np.sqrt(np.mean(err_all))
-            rmse_all_sd = bootstrap_RMSE(torch.tensor(err_all))
+            rmse_all_sd = bootstrap_RMSE(torch.tensor(err_all))  # pylint: disable=not-callable
 
             print(round(error.item(), 3), round(rmse_sd, 3), round(rmse_all, 3), round(rmse_all_sd, 3))
     else:

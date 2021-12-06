@@ -2,13 +2,15 @@ import argparse
 import pickle
 import shutil
 
+import numpy as np
+import torch
 import torch.nn as nn
 
 import sim_config
 from mlp import DirectOutcomeRegression, ModelTrainer
 from propensity import PropensityNetwork
 from sim_data_gen import DataGenerator
-from utils import *
+from utils import bootstrap_RMSE, get_scp_config, load_model
 
 
 def run(d_config, eval_only=False, eval_delta=False, save_data=False):
@@ -35,7 +37,7 @@ def run(d_config, eval_only=False, eval_delta=False, save_data=False):
         try:
             shutil.rmtree(model_path)
         except OSError as e:
-            print("Error: %s - %s." % (e.filename, e.strerror))
+            print("shutil note: %s - %s." % (e.filename, e.strerror))
 
     learning_rate = 0.01
     seed = 100
@@ -106,11 +108,13 @@ def run(d_config, eval_only=False, eval_delta=False, save_data=False):
 
     trainer.train(propensity_net, optimizer, train_dataset_p, valid_dataset_p, print_every=100)
 
-    x, y = dg.generate_dataset_propensity(return_dataset=False)
+    x, y = dg.generate_dataset_propensity(return_dataset=False)  # pylint: disable=unbalanced-tuple-unpacking
     weight = propensity_net.get_overlap_weight(x, y).unsqueeze(-1).cpu().numpy()
     # weight = propensity_net.get_weight(x, y).unsqueeze(-1).cpu().numpy()
     if save_data:
-        x = dg._make_tensor(np.concatenate((dg.confounder, dg.cause), axis=-1))[: dg.train_size]
+        x = dg._make_tensor(np.concatenate((dg.confounder, dg.cause), axis=-1))[  # pylint: disable=protected-access
+            : dg.train_size
+        ]
         torch.save(x, "{}_{}_x.pth".format(d_config.sim_id, model_id))
         torch.save(weight[: dg.train_size], "{}_{}_w.pth".format(d_config.sim_id, model_id))
         pickle.dump(dg, open("{}.pkl".format(d_config.sim_id), "wb"))
@@ -196,7 +200,7 @@ def run(d_config, eval_only=False, eval_delta=False, save_data=False):
             n_test = y_mat.shape[0]
             err_all = np.sum((y_mat_true[-n_test:, :] - y_mat) ** 2, axis=1)
             rmse_all = np.sqrt(np.mean(err_all))
-            rmse_all_sd = bootstrap_RMSE(torch.tensor(err_all))
+            rmse_all_sd = bootstrap_RMSE(torch.tensor(err_all))  # pylint: disable=not-callable
 
             print(round(error.item(), 3), round(rmse_sd, 3), round(rmse_all, 3), round(rmse_all_sd, 3))
     else:

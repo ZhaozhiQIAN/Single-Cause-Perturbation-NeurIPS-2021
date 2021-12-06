@@ -1,15 +1,16 @@
 import argparse
 
-from benchmarks import run_simulation_bmc
-from benchmarks import run_simulation_dor
-from benchmarks import run_simulation_drcrn
-from benchmarks import run_simulation_overlap
-from benchmarks import run_simulation_propensity
-from scp import run_simulation_scp
-from scp import run_simulation_scp_nn
-from benchmarks import run_simulation_tarnet
-from benchmarks import run_simulation_vsr
 import sim_config
+from benchmarks import (
+    run_simulation_bmc,
+    run_simulation_dor,
+    run_simulation_drcrn,
+    run_simulation_overlap,
+    run_simulation_propensity,
+    run_simulation_tarnet,
+    run_simulation_vsr,
+)
+from scp import run_simulation_scp, run_simulation_scp_nn
 
 parser = argparse.ArgumentParser("PKPD simulation")
 parser.add_argument("--method", type=str)
@@ -25,7 +26,7 @@ eval_delta = args.eval_delta == "True"
 
 try:
     config = sim_config.sim_dict[config_key]
-except Exception:
+except Exception:  # pylint: disable=broad-except
     print("Config {} is not found.".format(config_key))
     exit(-1)
 

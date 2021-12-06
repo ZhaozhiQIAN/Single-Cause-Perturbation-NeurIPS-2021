@@ -1,9 +1,10 @@
+import torch
 import torch.nn as nn
 from ignite.engine import Events, create_supervised_evaluator, create_supervised_trainer
 from ignite.handlers import Checkpoint, DiskSaver, EarlyStopping
 from ignite.metrics import Loss
 
-from global_config import *
+from global_config import DEVICE
 
 
 class DirectOutcomeRegression(nn.Module):
@@ -22,7 +23,7 @@ class DirectOutcomeRegression(nn.Module):
 
         self.device = device
 
-    def forward(self, input_mat):
+    def forward(self, input_mat):  # pylint: disable=arguments-differ
         # confounder = confounder.to(self.device)
         # cause = cause.to(self.device)
         # input_mat = torch.cat([confounder, cause], dim=-1)
@@ -95,7 +96,7 @@ class NN_SCP(nn.Module):
                 nn.Sigmoid(),
             ).to(device)
 
-    def forward(self, x):
+    def forward(self, x):  # pylint: disable=arguments-differ
         outcome = self.outcome_net0(x)
 
         return outcome, 0, 0, 0

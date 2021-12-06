@@ -1,7 +1,8 @@
 import numpy as np
+import torch
 import torch.nn as nn
 
-from global_config import *
+from global_config import DEVICE
 
 
 def reparameterize(mu, log_sigma):
@@ -18,7 +19,7 @@ class DensityRatioNetwork(nn.Module):
             nn.Linear(n_confounder + n_z, n_hidden), nn.ReLU(), nn.Linear(n_hidden, 2), nn.LogSoftmax(dim=-1)
         ).to(device)
 
-    def forward(self, x):
+    def forward(self, x):  # pylint: disable=arguments-differ
         log_prob = self.mlp(x)
         return log_prob
 
@@ -56,7 +57,7 @@ class TreatmentVAE(nn.Module):
         z = reparameterize(mu, log_sigma)
         return z
 
-    def forward(self, x):
+    def forward(self, x):  # pylint: disable=arguments-differ
         mu, log_sigma = self.encode(x)
         z = reparameterize(mu, log_sigma)
         return mu, log_sigma, self.decode(z), x
@@ -99,7 +100,7 @@ class PropensityNetwork(nn.Module):
 
         self.device = device
 
-    def forward(self, input_mat):
+    def forward(self, input_mat):  # pylint: disable=arguments-differ
         # input_mat = confounder
         log_propensity = self.mlp(input_mat)
         return log_propensity

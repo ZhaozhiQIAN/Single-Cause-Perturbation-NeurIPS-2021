@@ -5,7 +5,7 @@ import pandas as pds
 import torch
 from sklearn.decomposition import PCA
 
-from global_config import *
+from global_config import DEVICE, DTYPE
 from utils import bootstrap_RMSE
 
 
@@ -145,7 +145,7 @@ class DataGenerator:
 
     def _make_tensor(self, x):
         if type(x) == np.ndarray:
-            return torch.tensor(x, dtype=self.dtype, device=self.device)
+            return torch.tensor(x, dtype=self.dtype, device=self.device)  # pylint: disable=not-callable
         else:
             return x.to(dtype=self.dtype, device=self.device)
 
@@ -881,10 +881,12 @@ class DataGenerator:
         tau = y_mat_true[-n_test:, 1:] - y_mat_true[-n_test:, :-1]
 
         pehe = np.sqrt(np.mean((tau - tau_hat) ** 2))
-        pehe_sd = bootstrap_RMSE((torch.tensor((tau - tau_hat).flatten()) ** 2))
+        pehe_sd = bootstrap_RMSE((torch.tensor((tau - tau_hat).flatten()) ** 2))  # pylint: disable=not-callable
 
         rmse = np.sqrt(np.mean((y_mat_true[-n_test:, :] - y_mat) ** 2))
-        rmse_sd = bootstrap_RMSE((torch.tensor((y_mat_true[-n_test:, :] - y_mat).flatten()) ** 2))
+        rmse_sd = bootstrap_RMSE(
+            (torch.tensor((y_mat_true[-n_test:, :] - y_mat).flatten()) ** 2)  # pylint: disable=not-callable
+        )
 
         # NDCG
         order = y_mat.argsort(axis=-1)

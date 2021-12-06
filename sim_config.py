@@ -1,6 +1,18 @@
 from typing import NamedTuple
 
-from global_config import *
+from global_config import (
+    CAUSE_NOISE,
+    CONFOUNDING_LEVEL,
+    N_CAUSE,
+    N_CONFOUNDER,
+    OUTCOME_INTERACTION,
+    OUTCOME_NOISE,
+    P_CAUSE_CAUSE,
+    P_CONFOUNDER_CAUSE,
+    P_OUTCOME_DOUBLE,
+    P_OUTCOME_SINGLE,
+    SAMPLE_SIZE,
+)
 from sim_data_gen import DataGeneratorConfig
 
 #

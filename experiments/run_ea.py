@@ -1,12 +1,14 @@
 import argparse
 import shutil
 
+import numpy as np
+import torch
 import torch.nn as nn
 
 import sim_config
 import sim_data_gen
 from mlp import DirectOutcomeRegression, ModelTrainer
-from utils import *
+from utils import bootstrap_RMSE, get_scp_config, load_model
 
 
 def _add_noise_cause(k_cause, cause_mat, p):
@@ -65,7 +67,7 @@ def run(d_config, p=0, sigma=0, eval_only=False, revert="n", full_balance=False)
         try:
             shutil.rmtree(model_path)
         except OSError as e:
-            print("Error: %s - %s." % (e.filename, e.strerror))
+            print("shutil note: %s - %s." % (e.filename, e.strerror))
 
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -129,8 +131,12 @@ def run(d_config, p=0, sigma=0, eval_only=False, revert="n", full_balance=False)
     x_val = reshape_arr(x_cat[dg.train_size : dg.train_size + dg.val_size])
     y_val = reshape_arr(outcome_cat[dg.train_size : dg.train_size + dg.val_size])
 
-    train_dataset = torch.utils.data.dataset.TensorDataset(dg._make_tensor(x_train), dg._make_tensor(y_train))
-    valid_dataset = torch.utils.data.dataset.TensorDataset(dg._make_tensor(x_val), dg._make_tensor(y_val))
+    train_dataset = torch.utils.data.dataset.TensorDataset(
+        dg._make_tensor(x_train), dg._make_tensor(y_train)  # pylint: disable=protected-access
+    )
+    valid_dataset = torch.utils.data.dataset.TensorDataset(
+        dg._make_tensor(x_val), dg._make_tensor(y_val)  # pylint: disable=protected-access
+    )
 
     dg.generate_counterfactual_test(n_flip)
     new_x_list = dg.generate_test_real()
@@ -189,7 +195,7 @@ def run(d_config, p=0, sigma=0, eval_only=False, revert="n", full_balance=False)
         n_test = y_mat.shape[0]
         err_all = np.sum((y_mat_true[-n_test:, :] - y_mat) ** 2, axis=1)
         rmse_all = np.sqrt(np.mean(err_all))
-        rmse_all_sd = bootstrap_RMSE(torch.tensor(err_all))
+        rmse_all_sd = bootstrap_RMSE(torch.tensor(err_all))  # pylint: disable=not-callable
 
         y_mean = np.mean(y_mat_true, axis=0)[None, :]
         err_mean = np.sum((y_mat_true[-n_test:, :] - y_mean) ** 2, axis=1)

@@ -1,12 +1,15 @@
 import numpy as np
+import torch
 import torch.nn as nn
 
-from global_config import *
+from global_config import DEVICE
 
 
 def mmd2_rbf(Xc, Xt, sig):
-    """https://github.com/clinicalml/cfrnet/blob/master/cfr/cfr_net.py"""
-    """ Computes the l2-RBF MMD for X given t """
+    """
+    https://github.com/clinicalml/cfrnet/blob/master/cfr/cfr_net.py
+    Computes the l2-RBF MMD for X given t
+    """
     p = 0.5
 
     Kcc = torch.exp(-pdist2sq(Xc, Xc) / (sig ** 2))
@@ -57,7 +60,7 @@ class TarNet(nn.Module):
 
         self.heads = nn.ModuleList(heads)
 
-    def forward(self, input_mat):
+    def forward(self, input_mat):  # pylint: disable=arguments-differ
         # confounder, cause indicator
         x = input_mat[:, :-1]
         cause = input_mat[:, -1].unsqueeze(-1).to(torch.long)
@@ -192,7 +195,7 @@ class DR_CRN(nn.Module):
                     nn.Linear(n_confounder_rep + n_outcome_rep, n_outcome), nn.Sigmoid()
                 ).to(device)
 
-    def forward(self, x):
+    def forward(self, x):  # pylint: disable=arguments-differ
         # slice single cause
 
         single_cause = x[:, self.single_cause_index : (self.single_cause_index + 1)]
@@ -317,7 +320,7 @@ class DR_CRN_Multicause(nn.Module):
 
         self.heads = nn.ModuleList(heads)
 
-    def forward(self, input_mat):
+    def forward(self, input_mat):  # pylint: disable=arguments-differ
         # confounder, cause indicator
         x = input_mat[:, :-1]
         cause = input_mat[:, -1].unsqueeze(-1).to(torch.long)
