@@ -122,3 +122,5 @@ results/**
 .pylintrc
 .vscode
 pyproject.toml
+
+real_data/*.csv
