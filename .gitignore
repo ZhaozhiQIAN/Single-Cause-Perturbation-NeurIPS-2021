@@ -124,3 +124,7 @@ results/**
 pyproject.toml
 
 real_data/*.csv
+
+*.pkl
+
+results*
