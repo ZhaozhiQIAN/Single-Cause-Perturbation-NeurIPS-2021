@@ -1,3 +1,8 @@
+cd "$(dirname "$0")/.."  # cd to repo root.
+mkdir -p model
+mkdir -p results
+set +x
+
 prefix=2021
 
 config_arr=( 0 1 2 3 4 5 6 7 8 9 10 )
@@ -7,7 +12,9 @@ do
     for ablation in "" oracle_po predict_all_causes
     do
         abl="${ablation}perturb_subset-${value}"
-        python -u run_simulation_scp.py --ablation=${abl}  --config=${config} > results${prefix}/scp_${abl}_${config}.txt
+        set -x
+        python -u -m scp.run_simulation_scp --ablation=${abl}  --config=${config} > results${prefix}/scp_${abl}_${config}.txt
+        set +x
     done
 done
 
@@ -17,7 +24,9 @@ do
     for ablation in "dor"
     do
         abl="${ablation}perturb_subset-${value}"
-        python -u run_simulation_dor_ensemble.py --ablation=${abl}  --config=${config} > results${prefix}/scp_${abl}_${config}.txt
+        set -x
+        python -u -m benchmarks.run_simulation_dor_ensemble --ablation=${abl}  --config=${config} > results${prefix}/scp_${abl}_${config}.txt
+        set +x
     done
 done
 

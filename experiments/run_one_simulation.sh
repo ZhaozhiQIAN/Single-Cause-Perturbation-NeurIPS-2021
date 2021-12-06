@@ -1,9 +1,15 @@
 # confounding_level, n_flip, p_confounder_cause, p_cause_cause n_cause, n_confounder
+
+cd "$(dirname "$0")/.."  # cd to repo root.
+mkdir -p model
+mkdir -p results
+set +x
+
 data_setting=$1
 linear_arg=$2
 prefix=$3
 
-mkdir results${prefix}
+mkdir -p results${prefix}
 
 if [[ ${data_setting} == "confounding_level" ]]
 then
@@ -36,7 +42,7 @@ elif [[ ${data_setting} == "n_confounder" ]]
 then
     config_arr=( 10 20 30 40 )
 else
-echo "Setting ${data_setting} is not Found"
+    echo "Setting ${data_setting} is not Found"
 fi
 
 
@@ -44,11 +50,12 @@ cp global_config.py results${prefix}/global_config.txt
 
 for config_val in "${config_arr[@]}"
 do
-config="${data_setting}_${config_val}_${linear_arg}"
+    config="${data_setting}_${config_val}_${linear_arg}"
     for method in dor scp propensity tarnet vsr drcrn bmc overlap
     do
         echo "results/${method}_${config}.txt"
-        python -u run_simulation.py --method=${method} --config=${config} > results${prefix}/${method}_${config}.txt
+        set -x
+        python -u -m run_simulation --method=${method} --config=${config} > results${prefix}/${method}_${config}.txt
+        set +x
     done
 done
-

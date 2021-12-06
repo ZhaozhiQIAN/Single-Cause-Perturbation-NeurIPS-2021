@@ -1,16 +1,19 @@
 # run all simulations sequentially
 # this will take some time
 
-bash Fig3.sh > Fig3.txt
+cd "$(dirname "$0")/.."  # cd to repo root.
+mkdir -p model
+mkdir -p results
+set +x
 
-bash Fig4.sh > Fig4.txt
+printf "\n=============== Runnung: Fig3.sh ===============\n\n"
+bash experiments/Fig3.sh > Fig3.txt 2>&1
 
-bash Fig5.sh > Fig5.txt
+printf "\n=============== Runnung: Fig4.sh ===============\n\n"
+bash experiments/Fig4.sh > Fig4.txt 2>&1
 
-bash run_one_real.sh
-bash summarise_real.sh
+printf "\n=============== Runnung: Fig5.sh ===============\n\n"
+bash experiments/Fig5.sh > Fig5.txt 2>&1
 
-bash Fig_app.sh > Fig_app.txt
-
-#bash run_one_real.sh
-#bash summarise_real.sh
+printf "\n=============== Runnung: Fig_app.sh ===============\n\n"
+bash experiments/Fig_app.sh > Fig_app.txt 2>&1

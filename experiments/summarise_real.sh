@@ -1,3 +1,7 @@
+cd "$(dirname "$0")/.."  # cd to repo root.
+mkdir -p model
+mkdir -p results
+set +x
 
 config_arr=( 500 1000 1500 )
 rm results2021/real_results.txt

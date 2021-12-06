@@ -1,5 +1,11 @@
 
 # confounding_level, n_flip, p_confounder_cause, p_cause_cause n_cause, n_confounder
+
+cd "$(dirname "$0")/.."  # cd to repo root.
+mkdir -p model
+mkdir -p results
+set +x
+
 data_setting=$1
 linear_arg=$2
 prefix=$3
@@ -35,7 +41,7 @@ elif [[ ${data_setting} == "n_confounder" ]]
 then
     config_arr=( 10 20 30 40 )
 else
-echo "Setting ${data_setting} is not Found"
+    echo "Setting ${data_setting} is not Found"
 fi
 
 for config_val in "${config_arr[@]}"
@@ -47,4 +53,3 @@ config="${data_setting}_${config_val}_${linear_arg}"
         echo "${method} ${config} ${value}" >> results${prefix}/results_nips.txt
     done
 done
-

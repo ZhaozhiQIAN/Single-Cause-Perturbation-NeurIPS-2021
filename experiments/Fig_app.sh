@@ -1,19 +1,29 @@
+cd "$(dirname "$0")/.."  # cd to repo root.
+mkdir -p model
+mkdir -p results
+set +x
+
+
 prefix=2021
 
 for linear in linear nonlinear
     do
     for setting in  confounding_level p_confounder_cause p_cause_cause cause_noise
     do
-        bash run_one_simulation.sh ${setting} ${linear} ${prefix}
+        set -x
+        bash experiments/run_one_simulation.sh ${setting} ${linear} ${prefix}
+        set +x
     done
 done
 
 
 for linear in linear nonlinear
 do
-     for setting in confounding_level p_confounder_cause p_cause_cause cause_noise
+    for setting in confounding_level p_confounder_cause p_cause_cause cause_noise
     do
-        bash summarize_one_simulation.sh ${setting} ${linear} ${prefix}
+        set -x
+        bash experiments/summarize_one_simulation.sh ${setting} ${linear} ${prefix}
+        set +x
     done
 done
 
@@ -22,8 +32,10 @@ for level in 2 4 6 8 10
 do
     for seed in 1 2 3 4 5
     do
-    python -u run_simulation_scp.py --config=ea_balance_${level} --seed=$seed > results/ea_scp_${level}_$seed.txt
-    python -u run_simulation_dor.py --config=ea_balance_${level} --ablation=dor-perturb_subset-0 --seed=$seed > results/ea_dor_${level}_$seed.txt
+        set -x
+        python -u -m scp.run_simulation_scp --config=ea_balance_${level} --seed=$seed > results/ea_scp_${level}_$seed.txt
+        python -u -m benchmarks.run_simulation_dor --config=ea_balance_${level} --ablation=dor-perturb_subset-0 --seed=$seed > results/ea_dor_${level}_$seed.txt
+        set +x
     done
 done
 

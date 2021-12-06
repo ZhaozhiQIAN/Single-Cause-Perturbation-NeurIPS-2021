@@ -1,15 +1,23 @@
-
 #### Balancing Histogram ####
+
+cd "$(dirname "$0")/.."  # cd to repo root.
+mkdir -p model
+mkdir -p results
+set +x
+
 
 
 for level in 2 4 6 8 10
 do
     for seed in 1 2 3 4 5
     do
-        python -u run_simulation_scp.py --config=ea_balance_${level} --save_data=True --seed=$seed
-        python -u run_simulation_propensity.py --config=ea_balance_${level} --save_data=True --seed=$seed
+        set -x
+        python -u -m scp.run_simulation_scp --config=ea_balance_${level} --save_data=True --seed=$seed
+        python -u -m benchmarks.run_simulation_propensity --config=ea_balance_${level} --save_data=True --seed=$seed
+        set +x
     done
 done
+
 
 
 #### SCP ####
@@ -17,7 +25,9 @@ sigma_arr=( 0 0.1 0.2 0.3 0.41 0.5 0.6 )
 
 for sigma in "${sigma_arr[@]}"
 do
-  python -u run_ea.py --sigma=${sigma} --config=ea_5_linear > results/ea_sigma_${sigma}.txt
+    set -x
+    python -u -m experiments.run_ea --sigma=${sigma} --config=ea_5_linear > results/ea_sigma_${sigma}.txt
+    set +x
 done
 
 # summarize
@@ -34,14 +44,18 @@ done
 
 
 #### baseline ####
-python -u run_ea.py --p=0 --sigma=0 --revert=y --config=ea_5_linear > results/ea_revert.txt
+set -x
+python -u -m experiments.run_ea --p=0 --sigma=0 --revert=y --config=ea_5_linear > results/ea_revert.txt
+set +x
 
 
 flip_arr=( 0 1 2 3 4 5 )
 
 for flip in "${flip_arr[@]}"
 do
-    python -u run_simulation_dor.py --ablation=dor-perturb_subset-0 --config=ea_5_linear_${flip} > results/ea_baseline_${flip}.txt
+    set -x
+    python -u -m benchmarks.run_simulation_dor --ablation=dor-perturb_subset-0 --config=ea_5_linear_${flip} > results/ea_baseline_${flip}.txt
+    set +x
 done
 
 # summarize
@@ -54,4 +68,3 @@ do
     echo "FB ${flip} ${value}" >> results/results_ea_baseline.txt
 done
 cat results/results_ea_baseline.txt
-
