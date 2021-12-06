@@ -1,14 +1,14 @@
 import argparse
 
-import run_simulation_bmc
-import run_simulation_dor
-import run_simulation_drcrn
-import run_simulation_overlap
-import run_simulation_propensity
-import run_simulation_scp
-import run_simulation_scp_nn
-import run_simulation_tarnet
-import run_simulation_vsr
+from benchmarks import run_simulation_bmc
+from benchmarks import run_simulation_dor
+from benchmarks import run_simulation_drcrn
+from benchmarks import run_simulation_overlap
+from benchmarks import run_simulation_propensity
+from scp import run_simulation_scp
+from scp import run_simulation_scp_nn
+from benchmarks import run_simulation_tarnet
+from benchmarks import run_simulation_vsr
 import sim_config
 
 parser = argparse.ArgumentParser("PKPD simulation")

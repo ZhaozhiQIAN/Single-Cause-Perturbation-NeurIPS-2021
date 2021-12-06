@@ -11,6 +11,7 @@ Compared with existing works, SCP does not make assumptions about the distributi
 
 To run the code locally, make sure to first install the required python packages specified in `requirements.txt`.
 
+All the experiments scripts are located under [`experiments/`](./experiments/).
 The `reproduce_all.sh` shell script contains commands to reproduce *all* tables and figures in the paper.
 The `Fig[x].sh` or `Tab[x].sh`  shell script contain commands to generate results for individual figures or tables.
 The `Fig[x].ipynb` notebooks contain commands to create the visualizations.
@@ -18,7 +19,7 @@ The `Fig[x].ipynb` notebooks contain commands to create the visualizations.
 An implementation of SCP is provided in the file `run_simulation_scp.py`.
 Note that SCP is a general framework agnostic to the exact choice of step one and step two estimators.
 In this implementation, we use DR-CFR in step one and neural network regression in step two.
-The benchmarks are implemented in the files `run_simulation_[x].py`.
+The benchmarks are implemented in the files `benchmarks/run_simulation_[x].py`.
 
 ## Citation
 
@@ -37,4 +38,3 @@ If you find the software useful, please consider citing the following paper:
 Copyright 2021, Zhaozhi Qian.
 
 This software is released under the MIT license.
- 
