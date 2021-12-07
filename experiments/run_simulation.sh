@@ -1,4 +1,4 @@
-# TODO: UNUSED???
+# Old script.
 
 rm -r model/*
 

@@ -14,7 +14,7 @@ do
         abl="${ablation}perturb_subset-${value}"
         set -x
         python -u -m scp.run_simulation_scp --ablation=${abl}  --config=${config} > results${prefix}/scp_${abl}_${config}.txt
-        set +x
+        { set +x; } 2>/dev/null
     done
 done
 
@@ -26,7 +26,7 @@ do
         abl="${ablation}perturb_subset-${value}"
         set -x
         python -u -m benchmarks.run_simulation_dor_ensemble --ablation=${abl}  --config=${config} > results${prefix}/scp_${abl}_${config}.txt
-        set +x
+        { set +x; } 2>/dev/null
     done
 done
 

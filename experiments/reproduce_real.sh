@@ -4,7 +4,7 @@ mkdir -p results
 set +x
 
 printf "\n=============== Runnung: run_one_real.sh ===============\n\n"
-bash experiments/run_one_real.sh > run_real.txt 2>&1
+bash experiments/run_one_real.sh > experiments/reproduce_real.txt 2>&1
 
 printf "\n=============== Runnung: summarise_real.sh ===============\n\n"
-bash experiments/summarise_real.sh > run_real.txt 2>&1
+bash experiments/summarise_real.sh > experiments/reproduce_real.txt 2>&1

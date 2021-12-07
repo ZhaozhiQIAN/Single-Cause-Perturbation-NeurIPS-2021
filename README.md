@@ -12,7 +12,8 @@ Compared with existing works, SCP does not make assumptions about the distributi
 To run the code locally, make sure to first install the required python packages specified in `requirements.txt`.
 
 All the experiments scripts are located under [`experiments/`](./experiments/).
-The `reproduce_all.sh` shell script contains commands to reproduce *all* tables and figures in the paper.
+The `reproduce_all.sh` shell script contains commands to reproduce *all* synthetic data tables and figures in the paper.
+The `reproduce_real.sh` shell script contains commands to reproduce *all* real data tables and figures in the paper.
 The `Fig[x].sh` or `Tab[x].sh`  shell script contain commands to generate results for individual figures or tables.
 The `Fig[x].ipynb` notebooks contain commands to create the visualizations.
 

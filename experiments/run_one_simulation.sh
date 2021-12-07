@@ -56,6 +56,6 @@ do
         echo "results/${method}_${config}.txt"
         set -x
         python -u -m run_simulation --method=${method} --config=${config} > results${prefix}/${method}_${config}.txt
-        set +x
+        { set +x; } 2>/dev/null
     done
 done
