@@ -5,12 +5,13 @@ set +x
 
 prefix=2021
 
-set -x
 for linear in linear nonlinear
 do
     for setting in  p_outcome_single p_outcome_double n_cause n_confounder sample_size_train
     do
+        set -x
         bash experiments/run_one_simulation.sh ${setting} ${linear} ${prefix}
+        { set +x; } 2>/dev/null
     done
 done
 
@@ -22,7 +23,8 @@ for linear in linear nonlinear
 do
     for setting in p_outcome_single p_outcome_double  n_cause n_confounder sample_size_train
     do
+        set -x
         bash experiments/summarize_one_simulation.sh ${setting} ${linear} ${prefix}
+        { set +x; } 2>/dev/null
     done
 done
-{ set +x; } 2>/dev/null
