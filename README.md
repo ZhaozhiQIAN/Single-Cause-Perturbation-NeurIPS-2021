@@ -9,7 +9,7 @@ Compared with existing works, SCP does not make assumptions about the distributi
 
 ## Usage 
 
-To run the code locally, make sure to first install the required python packages specified in `requirements.txt`.
+To run the code locally, make sure to first install the required python packages specified in `requirements.txt`. Python 3.6+ is recommended (the code has been tested with Python 3.7).
 
 All the experiments scripts are located under [`experiments/`](./experiments/).
 The `reproduce_all.sh` shell script contains commands to reproduce *all* synthetic data tables and figures in the paper.
