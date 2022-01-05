@@ -1,4 +1,5 @@
 import argparse
+import os
 import pickle
 import shutil
 
@@ -33,11 +34,18 @@ def run(d_config, eval_only=False, eval_delta=False, save_data=False):
     max_epoch = 100
     model_id = "IPWO"
     model_path = "model/{}_{}_model/".format(model_id, d_config.sim_id)
+    extra_path = "model/simulation_overlap/{}_{}_model/".format(model_id, d_config.sim_id)
     if not eval_only:
         try:
             shutil.rmtree(model_path)
         except OSError as e:
             print("shutil note: %s - %s." % (e.filename, e.strerror))
+    try:
+        shutil.rmtree(extra_path)
+    except OSError as e:
+        print("shutil note: %s - %s." % (e.filename, e.strerror))
+    if not os.path.exists(extra_path):
+        os.makedirs(extra_path)
 
     learning_rate = 0.01
     seed = 100
@@ -115,9 +123,9 @@ def run(d_config, eval_only=False, eval_delta=False, save_data=False):
         x = dg._make_tensor(np.concatenate((dg.confounder, dg.cause), axis=-1))[  # pylint: disable=protected-access
             : dg.train_size
         ]
-        torch.save(x, "{}_{}_x.pth".format(d_config.sim_id, model_id))
-        torch.save(weight[: dg.train_size], "{}_{}_w.pth".format(d_config.sim_id, model_id))
-        pickle.dump(dg, open("{}.pkl".format(d_config.sim_id), "wb"))
+        torch.save(x, os.path.join(extra_path, "{}_{}_x.pth".format(d_config.sim_id, model_id)))
+        torch.save(weight[: dg.train_size], os.path.join(extra_path, "{}_{}_w.pth".format(d_config.sim_id, model_id)))
+        pickle.dump(dg, open(os.path.join(extra_path, "{}.pkl".format(d_config.sim_id), "wb")))
         return 0
     print(weight.shape)
     print(weight[:10])
