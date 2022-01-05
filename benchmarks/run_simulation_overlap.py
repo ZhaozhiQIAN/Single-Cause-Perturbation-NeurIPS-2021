@@ -34,7 +34,7 @@ def run(d_config, eval_only=False, eval_delta=False, save_data=False):
     max_epoch = 100
     model_id = "IPWO"
     model_path = "model/{}_{}_model/".format(model_id, d_config.sim_id)
-    extra_path = "model/simulation_overlap/{}_{}_model/".format(model_id, d_config.sim_id)
+    extra_path = "model/simulation_overlap/"
     if not eval_only:
         try:
             shutil.rmtree(model_path)
