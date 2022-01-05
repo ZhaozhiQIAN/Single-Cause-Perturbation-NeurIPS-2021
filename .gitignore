@@ -122,3 +122,17 @@ results/**
 .pylintrc
 .vscode
 pyproject.toml
+
+real_data/*.csv
+
+*.pkl
+
+results*
+
+Fig3.txt
+Fig4.txt
+Fig5.txt
+Fig_app.txt
+reproduce_real.txt
+
+model/

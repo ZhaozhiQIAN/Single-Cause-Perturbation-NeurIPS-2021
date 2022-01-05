@@ -1,12 +1,9 @@
-pytorch==1.5.0
-ignite==0.4.2
-numpy==1.21.2
-scipy==1.4.1
-pandas
+argparse; python_version < '3.2'
+# jupyterlab>=3  # Optional, for running notebooks.
 matplotlib
-argparse
-shutil
-importlib
-pickle
-typing
-os
+numpy>=1.21.2
+pandas
+pytorch-ignite~=0.4.2
+scipy>=1.4.1
+torch==1.5.0
+typing; python_version < '3.5'
