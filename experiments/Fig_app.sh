@@ -39,7 +39,7 @@ do
     done
 done
 
-rm results/results_ea_confound.txt
+rm -f results/results_ea_confound.txt
 for level in 2 4 6 8 10
 do
     for seed in 1 2 3 4 5

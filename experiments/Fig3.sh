@@ -18,7 +18,7 @@ done
 
 mkdir -p results${prefix}
 mkdir -p results
-rm results${prefix}/results_nips.txt
+rm -f results${prefix}/results_nips.txt
 for linear in linear nonlinear
 do
     for setting in p_outcome_single p_outcome_double  n_cause n_confounder sample_size_train

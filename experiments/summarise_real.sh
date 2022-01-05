@@ -4,7 +4,7 @@ mkdir -p results
 set +x
 
 config_arr=( 500 1000 1500 )
-rm results2021/real_results.txt
+rm -f results2021/real_results.txt
 for config_val in "${config_arr[@]}"
 do
     config="real_${config_val}"

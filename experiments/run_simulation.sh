@@ -1,6 +1,6 @@
 # Old script.
 
-rm -r model/*
+rm -r -f model/*
 
 # n_confounder_40_linear n_confounder_25_linear n_confounder_10_linear
 # p_confounder_cause_0.1_linear p_confounder_cause_0.3_linear p_confounder_cause_0.5_linear n_cause_2_linear n_cause_5_linear n_cause_10_linear
@@ -26,7 +26,7 @@ done
 
 # config=n_confounder_40_linear
 #
-rm results/results_nips.txt
+rm -f results/results_nips.txt
 touch results/results_nips.txt
 
 for linear in linear nonlinear

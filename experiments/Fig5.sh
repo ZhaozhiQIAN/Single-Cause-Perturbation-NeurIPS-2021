@@ -34,7 +34,7 @@ done
 
 sigma_arr=( 0 0.1 0.2 0.3 0.41 0.5 0.6 )
 
-rm results/results_ea.txt
+rm -f results/results_ea.txt
 for sigma in "${sigma_arr[@]}"
 do
     value=`tail -n 1 results/ea_sigma_${sigma}.txt`
@@ -61,7 +61,7 @@ done
 # summarize
 
 flip_arr=( 1 2 3 4 5 )
-rm results/results_ea_baseline.txt
+rm -f results/results_ea_baseline.txt
 for flip in "${flip_arr[@]}"
 do
     value=`tail -n 1 results/ea_baseline_${flip}.txt`

@@ -31,7 +31,7 @@ do
 done
 
 
-rm results${prefix}/results_fig4.txt
+rm -f results${prefix}/results_fig4.txt
 touch results${prefix}/results_fig4.txt
 
 for val in "${config_arr[@]}"
